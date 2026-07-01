@@ -1,19 +1,49 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { validateLoginForm } from "../../utils/authValidation";
+
 export default function CustomerLogin() {
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [errors, setErrors] = useState({});
   const [isVisible, setIsVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [serverMessage, setServerMessage] = useState("");
 
+  // Hàm này cập nhật state form khi người dùng nhập dữ liệu.
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
+    setServerMessage("");
+  };
+
+  // Hàm xử lý submit: kiểm tra validate trước rồi mới gửi lên backend.
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setLoading(true);
+    const { valid, errors: validationErrors } = validateLoginForm(form);
+    if (!valid) {
+      setErrors(validationErrors);
+      return;
+    }
 
-    // Demo giả lập API
-    setTimeout(() => {
-      alert("Đăng nhập thành công! (Demo)");
+    setLoading(true);
+    setServerMessage("");
+
+    try {
+      await login({
+        email: form.email.trim(),
+        password: form.password,
+      });
+      navigate("/");
+    } catch (error) {
+      setServerMessage(error.message || "Đăng nhập không thành công.");
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -86,10 +116,15 @@ export default function CustomerLogin() {
 
                 <input
                   type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
                   required
+                  autoComplete="email"
                   placeholder="you@example.com"
                   className="w-full bg-zinc-800 border border-white/10 focus:border-amber-400 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-500 focus:outline-none transition-all"
                 />
+                {errors.email && <p className="mt-2 text-sm text-red-400">{errors.email}</p>}
               </div>
             </div>
 
@@ -104,10 +139,15 @@ export default function CustomerLogin() {
 
                 <input
                   type={isVisible ? "text" : "password"}
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
                   required
+                  autoComplete="current-password"
                   placeholder="••••••••"
                   className="w-full bg-zinc-800 border border-white/10 focus:border-amber-400 rounded-2xl py-4 pl-12 pr-12 text-white placeholder:text-zinc-500 focus:outline-none transition-all"
                 />
+                {errors.password && <p className="mt-2 text-sm text-red-400">{errors.password}</p>}
 
                 <button
                   type="button"
@@ -134,6 +174,8 @@ export default function CustomerLogin() {
                 Quên mật khẩu?
               </Link>
             </div>
+
+            {serverMessage && <p className="text-sm text-red-400">{serverMessage}</p>}
 
             {/* Submit button */}
             <button

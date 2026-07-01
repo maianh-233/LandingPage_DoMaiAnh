@@ -1,16 +1,115 @@
-# React + Vite
+# Lunaria Technology Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, responsive frontend for a premium electronics storefront built with React, Vite, and Tailwind CSS. This project was created to showcase strong front-end development skills such as UI implementation, routing, component composition, authentication UX, and responsive design.
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+This frontend demonstrates a polished e-commerce experience for a technology brand, including:
+- Product discovery and category browsing
+- Promotional and brand-focused sections
+- Shopping cart and checkout experience
+- User profile and order management views
+- Authentication pages for login and registration
+- Responsive UI optimized for desktop and mobile
 
-## React Compiler
+## Key Frontend Highlights
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Modern React application structure with reusable components
+- Client-side routing for multi-page user flows
+- Clean and scalable styling with Tailwind CSS
+- Interactive UI elements using Framer Motion and Lucide icons
+- Form validation and user feedback for authentication flows
+- Integration with backend APIs for auth and user state
+- Production-ready build setup with Vite
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- React 19
+- Vite
+- React Router
+- Tailwind CSS
+- Framer Motion
+- Lucide React
+- Chart.js + Recharts
+- Leaflet
+- ESLint
+
+## Project Structure
+
+```bash
+src/
+  components/      # Reusable UI components
+  pages/           # Route-based pages
+  hooks/           # Custom hooks
+  context/         # Global state and auth context
+  services/        # API service layer
+  utils/           # Helper functions and validation
+```
+
+## Main Features
+
+### User Experience
+- Landing page with hero section and featured content
+- Product listing and detail pages
+- Cart and checkout interfaces
+- Order history and profile pages
+
+### Authentication Flow
+- Login page with validation
+- Registration page with validation
+- Protected user state management
+- Logout handling and session persistence
+
+### UI / UX
+- Responsive layout for mobile and desktop
+- Consistent design language and spacing
+- Interactive navigation and dropdown menus
+- Accessible and polished form components
+
+## Getting Started
+
+### Prerequisites
+- Node.js 18+
+- npm or pnpm
+
+### Installation
+
+```bash
+npm install
+```
+
+### Run locally
+
+```bash
+npm run dev
+```
+
+Then open the local Vite URL in your browser.
+
+### Build for production
+
+```bash
+npm run build
+```
+
+## Development Notes
+
+This project is structured to reflect real-world front-end development practices:
+- Separation of concerns between UI, services, and state
+- Reusable components for faster development
+- Clean routing and page organization
+- Prepared for future expansion with backend integration and additional product features
+
+## Why this project is relevant for a Frontend role
+
+This project demonstrates:
+- Strong React fundamentals
+- Component-driven UI development
+- Responsive UI implementation
+- Form handling and validation
+- API integration in the frontend layer
+- Attention to detail in user experience and visual quality
+
+## Contact
+
+If you would like to discuss this project further, I would be happy to share more details about the implementation and design decisions.

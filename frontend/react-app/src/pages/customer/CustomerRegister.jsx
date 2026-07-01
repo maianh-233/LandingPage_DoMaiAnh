@@ -1,24 +1,77 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
 import {
-  Sparkles,
-  Mail,
-  Phone,
-  Lock,
-  Eye,
-  EyeOff,
+    Eye,
+    EyeOff,
+    Lock,
+    Mail,
+    Phone,
+    Sparkles,
 } from "lucide-react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { validateRegisterForm } from "../../utils/authValidation";
 
 export default function CustomerRegister() {
+  const navigate = useNavigate();
+  const { register } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [serverMessage, setServerMessage] = useState("");
+  const [errors, setErrors] = useState({});
+  const [form, setForm] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    gender: "",
+    dateOfBirth: "",
+    password: "",
+  });
 
+  // Hàm này cập nhật state form khi người dùng nhập dữ liệu.
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
+    setServerMessage("");
+  };
+
+  // Hàm xử lý submit: kiểm tra validate trước rồi mới gửi lên backend.
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    
-    alert(
-      "Đăng ký tài khoản thành công! 🎉\nChào mừng bạn đến với LUNARIA."
-    );
+    const { valid, errors: validationErrors } = validateRegisterForm(form);
+    if (!valid) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    setLoading(true);
+    setServerMessage("");
+
+    try {
+      const normalizedGender =
+        form.gender === "male"
+          ? "MALE"
+          : form.gender === "female"
+            ? "FEMALE"
+            : form.gender === "other"
+              ? "OTHER"
+              : "OTHER";
+
+      await register({
+        fullName: form.fullName.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+        gender: normalizedGender,
+        dateOfBirth: form.dateOfBirth,
+        password: form.password,
+      });
+      navigate("/");
+    } catch (error) {
+      setServerMessage(error.message || "Đăng ký không thành công.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -89,10 +142,15 @@ export default function CustomerRegister() {
 
               <input
                 type="text"
+                name="fullName"
+                value={form.fullName}
+                onChange={handleChange}
                 required
+                autoComplete="name"
                 placeholder="Nguyễn Thị Hoa"
                 className="w-full bg-zinc-800 border border-white/10 focus:border-amber-400 rounded-2xl py-4 px-5 text-white placeholder:text-zinc-500 focus:outline-none transition-all"
               />
+              {errors.fullName && <p className="mt-2 text-sm text-red-400">{errors.fullName}</p>}
             </div>
 
             {/* Email */}
@@ -106,10 +164,15 @@ export default function CustomerRegister() {
 
                 <input
                   type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
                   required
+                  autoComplete="email"
                   placeholder="you@example.com"
                   className="w-full bg-zinc-800 border border-white/10 focus:border-amber-400 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-500 focus:outline-none transition-all"
                 />
+                {errors.email && <p className="mt-2 text-sm text-red-400">{errors.email}</p>}
               </div>
             </div>
 
@@ -124,10 +187,15 @@ export default function CustomerRegister() {
 
                 <input
                   type="tel"
+                  name="phone"
+                  value={form.phone}
+                  onChange={handleChange}
                   required
+                  autoComplete="tel"
                   placeholder="0123 456 789"
                   className="w-full bg-zinc-800 border border-white/10 focus:border-amber-400 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-500 focus:outline-none transition-all"
                 />
+                {errors.phone && <p className="mt-2 text-sm text-red-400">{errors.phone}</p>}
               </div>
             </div>
 
@@ -141,13 +209,16 @@ export default function CustomerRegister() {
                 </label>
 
                 <select
+                  name="gender"
+                  value={form.gender}
+                  onChange={handleChange}
                   required
                   className="w-full bg-zinc-800 border border-white/10 focus:border-amber-400 rounded-2xl py-4 px-5 text-white focus:outline-none transition-all"
                 >
                   <option value="">Chọn giới tính</option>
-                  <option value="nam">Nam</option>
-                  <option value="nu">Nữ</option>
-                  <option value="khac">Khác</option>
+                  <option value="male">Nam</option>
+                  <option value="female">Nữ</option>
+                  <option value="other">Khác</option>
                 </select>
               </div>
 
@@ -159,6 +230,9 @@ export default function CustomerRegister() {
 
                 <input
                   type="date"
+                  name="dateOfBirth"
+                  value={form.dateOfBirth}
+                  onChange={handleChange}
                   required
                   className="w-full bg-zinc-800 border border-white/10 focus:border-amber-400 rounded-2xl py-4 px-5 text-white focus:outline-none transition-all"
                 />
@@ -176,10 +250,15 @@ export default function CustomerRegister() {
 
                 <input
                   type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
                   required
+                  autoComplete="new-password"
                   placeholder="••••••••"
                   className="w-full bg-zinc-800 border border-white/10 focus:border-amber-400 rounded-2xl py-4 pl-12 pr-12 text-white placeholder:text-zinc-500 focus:outline-none transition-all"
                 />
+                {errors.password && <p className="mt-2 text-sm text-red-400">{errors.password}</p>}
 
                 <button
                   type="button"
@@ -197,12 +276,19 @@ export default function CustomerRegister() {
 
 
 
+            {serverMessage && <p className="mt-2 text-sm text-red-400">{serverMessage}</p>}
+
             {/* Submit */}
             <button
               type="submit"
+              disabled={loading}
               className="w-full mt-6 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-semibold py-4 rounded-2xl text-lg shadow-xl shadow-amber-500/40 transition-all active:scale-95 flex items-center justify-center gap-3"
             >
-              Tạo tài khoản
+              {loading ? (
+                <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+              ) : (
+                "Tạo tài khoản"
+              )}
             </button>
 
             {/* Login */}

@@ -1,9 +1,11 @@
-import { useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ProfileHeader from "../../components/customer/Profile/ProfileHeader";
 import InfoSection from "../../components/customer/Profile/InfoSection";
 import AddressList from "../../components/customer/Profile/AddressList";
 import EditProfileModal from "../../components/customer/Profile/EditProfileModal";
 import AddAddressModal from "../../components/customer/Profile/AddAddressModal";
+import { useAuth } from "../../context/AuthContext";
 
 const USER_INIT = {
   name: "Nguyễn Văn A",
@@ -61,11 +63,36 @@ const ADDRESS_INIT = [
 ];
 
 export default function CustomerInfoPage() {
+  const navigate = useNavigate();
+  const { user: authUser, loading: authLoading } = useAuth();
   const [user, setUser] = useState(USER_INIT);
   const [addresses, setAddresses] = useState(ADDRESS_INIT);
+  const [loadingProfile, setLoadingProfile] = useState(true);
 
   const [editOpen, setEditOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+
+  useEffect(() => {
+    if (authLoading) {
+      setLoadingProfile(true);
+      return;
+    }
+
+    if (!authUser) {
+      navigate("/customerlogin");
+      return;
+    }
+
+    setUser({
+      name: authUser.fullName || "Người dùng",
+      email: authUser.email || "",
+      phone: authUser.phone || "",
+      birthDate: authUser.dateOfBirth
+        ? new Date(authUser.dateOfBirth).toISOString().split("T")[0]
+        : "",
+    });
+    setLoadingProfile(false);
+  }, [authLoading, authUser, navigate]);
 
   const deleteAddress = useCallback(
     (id) => setAddresses((prev) => prev.filter((a) => a.id !== id)),
@@ -77,19 +104,21 @@ export default function CustomerInfoPage() {
     setAddOpen(false);
   };
 
+  if (loadingProfile) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-200">
+        <div className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 px-6 py-4">
+          <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
+          <span>Đang tải thông tin người dùng...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
-<div className="w-full min-h-screen bg-zinc-950 text-zinc-200">
-  <div className="
-    w-full
-    min-h-screen
-    bg-zinc-900
-    border border-zinc-800
-    md:my-6
-    md:rounded-3xl
-    overflow-hidden
-  ">
-
+      <div className="w-full min-h-screen bg-zinc-950 text-zinc-200">
+        <div className="w-full min-h-screen bg-zinc-900 border border-zinc-800 md:my-6 md:rounded-3xl overflow-hidden">
           <ProfileHeader user={user} onEdit={() => setEditOpen(true)} />
 
           <div className="p-6 md:p-10 space-y-12">

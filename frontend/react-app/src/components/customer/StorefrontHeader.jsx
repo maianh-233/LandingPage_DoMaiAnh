@@ -1,14 +1,15 @@
-import { useState, useRef, useEffect } from "react";
-import { Link, NavLink } from "react-router-dom";
 import {
-  ShoppingBag,
-  User,
-  Package,
-  LogOut,
-  ChevronDown,
-  Menu,
-  X,
+    ChevronDown,
+    LogOut,
+    Menu,
+    Package,
+    ShoppingBag,
+    User,
+    X,
 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 /* ================= BRAND ================= */
 function BrandMark() {
@@ -35,6 +36,8 @@ function BrandMark() {
 
 /* ================= HEADER ================= */
 export default function StorefrontHeader({ navLinks = [], cartCount = 0 }) {
+  const navigate = useNavigate();
+  const { user, logout, loading } = useAuth();
   const [openUser, setOpenUser] = useState(false);
   const [openMobileMenu, setOpenMobileMenu] = useState(false);
   const userRef = useRef(null);
@@ -51,10 +54,11 @@ export default function StorefrontHeader({ navLinks = [], cartCount = 0 }) {
     return () => document.removeEventListener("click", handler);
   }, []);
 
-  const handleLogout = () => {
+  // Hàm đăng xuất: gọi context logout rồi chuyển về trang đăng nhập.
+  const handleLogout = async () => {
     setOpenUser(false);
-    // TODO: logout logic ở đây
-    console.log("Logout");
+    await logout();
+    navigate("/customerlogin");
   };
 
   return (
@@ -115,11 +119,13 @@ export default function StorefrontHeader({ navLinks = [], cartCount = 0 }) {
               className="flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1 transition hover:bg-zinc-800"
             >
               <div className="hidden text-right leading-tight sm:block">
-                <p className="text-sm font-medium">Đỗ Mai Anh</p>
+                <p className="text-sm font-medium">
+                  {loading ? "Đang tải..." : user?.fullName || "Khách"}
+                </p>
               </div>
 
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-700 text-xs font-bold">
-                MA
+                {loading ? "..." : user?.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
               </div>
 
               <ChevronDown
