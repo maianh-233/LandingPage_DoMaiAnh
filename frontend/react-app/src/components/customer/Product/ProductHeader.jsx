@@ -17,7 +17,7 @@ export default function ProductHeader({
             <SearchBar
               value={search}
               onChange={setSearch}
-              onKeyDown={onSearchKeyDown} // ✅ truyền xuống
+              onKeyDown={onSearchKeyDown} 
               placeholder="Tìm kiếm sản phẩm..."
             />
           </div>
@@ -26,7 +26,7 @@ export default function ProductHeader({
           {/* BUTTON FILTER MOBILE */}
           <button
             className="lg:hidden px-4 py-2 bg-amber-400 rounded-xl"
-            onClick={() => setOpenFilter(true)}  // ✅ OK sau khi fix
+            onClick={() => setOpenFilter(true)}  
           >
             Bộ lọc
           </button>

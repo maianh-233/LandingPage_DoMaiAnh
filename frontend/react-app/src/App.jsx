@@ -2,17 +2,17 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import CustomerLayout from "./components/customer/CustomerLayout";
 import NotFound from "./pages/common/NotFound";
+import CartPage from "./pages/customer/CartPage";
+import CheckoutPage from "./pages/customer/CheckoutPage";
 import CustomerHome from "./pages/customer/CustomerHome";
+import CustomerInfo from "./pages/customer/CustomerInfor";
 import CustomerLogin from "./pages/customer/CustomerLogin";
 import CustomerRegister from "./pages/customer/CustomerRegister";
+import MyOrdersPage from "./pages/customer/MyOrdersPage";
+import OrderDetailPage from "./pages/customer/OrderDetailPage";
+import ProductDetail from "./pages/customer/ProductDetail";
 import ProductPage from "./pages/customer/ProductPage";
 import PromotionPage from "./pages/customer/PromotionPage";
-import CustomerInfo from "./pages/customer/CustomerInfor";
-import CartPage from "./pages/customer/CartPage";
-import MyOrdersPage from "./pages/customer/MyOrdersPage";
-import CheckoutPage from "./pages/customer/CheckoutPage";
-import ProductDetail from "./pages/customer/ProductDetail";
-import OrderDetailPage from "./pages/customer/OrderDetailPage";
 
 
 function App() {
@@ -28,7 +28,8 @@ function App() {
           <Route path="carts" element={<CartPage/>} />
           <Route path="orders" element={<MyOrdersPage/>} />
           <Route path="checkout" element={<CheckoutPage />} />
-          <Route path="productdetail" element={<ProductDetail />} />
+          {/* NOTE: productdetail cần có productId theo route động */}
+          <Route path="productdetail/:productId" element={<ProductDetail />} />
           <Route path="orderdetail" element={<OrderDetailPage />} />
         </Route>
       

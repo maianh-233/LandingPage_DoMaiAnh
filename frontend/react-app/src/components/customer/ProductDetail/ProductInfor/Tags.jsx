@@ -1,20 +1,27 @@
-const tags = [
-  "Wireless",
-  "Bluetooth53",
-  "ANC",
-  "LowLatency",
-  "HiFiSound",
-];
+export default function Tags({ tags = [] }) {
+  // tags có thể là string[] hoặc {id,name}[] tùy backend.
+  const normalized = (tags || []).map((t) => {
+    if (typeof t === "string") return { id: t, name: t };
+    if (t && typeof t === "object") return { id: t.id ?? t.name, name: t.name ?? "" };
+    return { id: String(t), name: String(t) };
+  }).filter((t) => t.name);
 
-export default function Tags() {
+  // fallback nếu backend chưa trả.
+  const fallback = ["Wireless", "Bluetooth53", "ANC", "LowLatency", "HiFiSound"].map((name) => ({
+    id: name,
+    name,
+  }));
+
+  const list = normalized.length ? normalized : fallback;
+
   return (
     <div className="mt-8">
       <h3 className="mb-3 font-medium text-gray-300">Tags</h3>
 
       <div className="flex flex-wrap gap-3">
-        {tags.map((tag) => (
+        {list.map((tag) => (
           <span
-            key={tag}
+            key={tag.id}
             className="
               cursor-pointer
               rounded-full
@@ -32,10 +39,11 @@ export default function Tags() {
               active:scale-95
             "
           >
-            #{tag}
+            #{tag.name}
           </span>
         ))}
       </div>
     </div>
   );
 }
+

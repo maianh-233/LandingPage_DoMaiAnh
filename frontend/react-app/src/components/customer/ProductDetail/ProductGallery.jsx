@@ -1,41 +1,37 @@
-import { useEffect, useState, useRef } from "react";
+import { useMemo, useState } from "react";
 
-const images = [
-  "https://i.pinimg.com/1200x/93/16/f2/9316f2e204ba45717b80c41e1ab66e31.jpg",
-  "https://i.pinimg.com/736x/f3/c9/96/f3c9960ca48389b120e5b9bbc4dc9471.jpg",
-  "https://i.pinimg.com/736x/11/5b/ea/115bea4c439db9e0f54af3e35e1b6aa8.jpg",
-  "https://i.pinimg.com/1200x/4f/d2/07/4fd2075c7782fc6dd8abcc1a3d732bc4.jpg",
-];
+export default function ProductGallery({ variants = [] }) {
+  // NOTE: Dữ liệu ảnh lấy từ variants (ảnh theo variant)
+  const images = useMemo(() => {
+    const imgs = (variants || [])
+      .map((v) => v?.imageUrl)
+      .filter(Boolean);
 
-export default function ProductGallery() {
+    // fallback: nếu chưa có variants thì giữ UI không crash
+    return imgs.length
+      ? imgs
+      : [
+          "https://i.pinimg.com/1200x/93/16/f2/9316f2e204ba45717b80c41e1ab66e31.jpg",
+        ];
+  }, [variants]);
+
   const [index, setIndex] = useState(0);
-  const intervalRef = useRef(null);
 
-  const startAutoSlide = () => {
-    intervalRef.current = setInterval(() => {
-      setIndex((prev) => (prev + 1) % images.length);
-    }, 3000); // 3 giây đổi ảnh
-  };
+  // NOTE: đảm bảo index không vượt quá danh sách ảnh khi variants thay đổi
+  const safeIndex = Math.min(index, Math.max(0, images.length - 1));
 
-  const stopAutoSlide = () => {
-    clearInterval(intervalRef.current);
-  };
 
-  useEffect(() => {
-    startAutoSlide();
-    return stopAutoSlide;
-  }, []);
+
+
 
   return (
     <div>
       {/* MAIN IMAGE */}
       <div
         className="bg-gray-900 rounded-3xl overflow-hidden"
-        onMouseEnter={stopAutoSlide}
-        onMouseLeave={startAutoSlide}
       >
         <img
-          src={images[index]}
+          src={images[safeIndex]}
           alt="Product"
           className="w-full aspect-square object-cover transition-opacity duration-500"
         />
@@ -45,7 +41,7 @@ export default function ProductGallery() {
       <div className="flex gap-3 mt-6 overflow-x-auto pb-2">
         {images.map((img, i) => (
           <img
-            key={img}
+            key={i}
             src={img}
             onClick={() => setIndex(i)}
             className={`w-20 h-20 md:w-24 md:h-24 rounded-2xl object-cover cursor-pointer 

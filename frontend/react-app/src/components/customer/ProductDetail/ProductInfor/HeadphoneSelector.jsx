@@ -1,49 +1,41 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
-export default function HeadphoneSelector() {
-  const [selected, setSelected] = useState("black");
+export default function HeadphoneSelector({ variants = [], onSelectVariant }) {
+  // NOTE: selection theo variants thật từ backend
+  const initialVariantId = useMemo(() => variants?.[0]?.id || "", [variants]);
+  const [selectedVariantId, setSelectedVariantId] = useState(initialVariantId);
 
-  const headphones = [
-    {
-      id: "black",
-      name: "Black Edition",
-      image:
-        "https://i.pinimg.com/1200x/93/16/f2/9316f2e204ba45717b80c41e1ab66e31.jpg",
-    },
-    {
-      id: "white",
-      name: "White Edition",
-      image:
-        "https://i.pinimg.com/736x/f3/c9/96/f3c9960ca48389b120e5b9bbc4dc9471.jpg",
-    },
-    {
-      id: "blue",
-      name: "Blue Edition",
-      image:
-        "https://i.pinimg.com/736x/11/5b/ea/115bea4c439db9e0f54af3e35e1b6aa8.jpg",
-    },
-    {
-      id: "red",
-      name: "Red Edition",
-      image:
-        "https://i.pinimg.com/1200x/4f/d2/07/4fd2075c7782fc6dd8abcc1a3d732bc4.jpg",
-    },
-  ];
+  const effectiveSelectedVariantId =
+    selectedVariantId || variants?.[0]?.id || "";
+
+
+
+
+
 
   return (
     <div className="mt-8">
-      <h3 className="mb-4 text-sm font-medium text-gray-300">
-        Phiên bản
-      </h3>
+      <h3 className="mb-4 text-sm font-medium text-gray-300">Phiên bản</h3>
 
+      {/* NOTE: nút chọn lấy từ variants trả về từ backend */}
       <div className="flex gap-4">
-        {headphones.map((item) => {
-          const active = selected === item.id;
+        {(variants || []).map((item) => {
+          const active = effectiveSelectedVariantId === item.id;
+          const label = [item.color, item.storage].filter(Boolean).join(" / ");
 
           return (
             <button
               key={item.id}
-              onClick={() => setSelected(item.id)}
+              type="button"
+                onClick={() => {
+                  // NOTE: chỉ update UI theo selection hiện tại
+                  setSelectedVariantId(item.id);
+
+                  // NOTE: notify lên ProductInfo để đổi giá/ảnh (nếu component cha nhận)
+                  if (typeof onSelectVariant === "function") {
+                    onSelectVariant(item);
+                  }
+                }}
               className={`
                 group relative flex flex-col items-center
                 rounded-2xl p-2
@@ -56,8 +48,8 @@ export default function HeadphoneSelector() {
               `}
             >
               <img
-                src={item.image}
-                alt={item.name}
+                src={item.imageUrl || "https://i.pinimg.com/1200x/93/16/f2/9316f2e204ba45717b80c41e1ab66e31.jpg"}
+                alt={label || "Variant"}
                 className="h-20 w-20 object-contain transition-transform duration-200 group-hover:scale-105"
               />
 
@@ -66,7 +58,7 @@ export default function HeadphoneSelector() {
                   active ? "text-[#FFCC00]" : "text-gray-400 group-hover:text-[#FFCC00]"
                 }`}
               >
-                {item.name}
+                {label || "Phiên bản"}
               </span>
             </button>
           );

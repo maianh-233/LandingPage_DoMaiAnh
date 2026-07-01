@@ -1,5 +1,14 @@
+import { useNavigate } from "react-router-dom";
+
 function ProductCard({ product }) {
-  const { name, tags, thumbnail, min_price } = product;
+  const navigate = useNavigate();
+  const { id, name, tags, thumbnail, min_price } = product;
+
+  // NOTE: Khi bấm “XEM CHI TIẾT”, chuyển sang /productdetail/:productId
+  const handleViewDetail = () => {
+    if (!id) return;
+    navigate(`/productdetail/${id}`);
+  };
 
   return (
     <article className="group relative overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900 transition duration-500 hover:-translate-y-2 hover:border-amber-400">
@@ -7,12 +16,12 @@ function ProductCard({ product }) {
       {/* TAG */}
       {tags?.length > 0 && (
         <div className="absolute left-4 top-4 z-10 flex flex-wrap gap-2">
-          {tags.map(tag => (
+          {tags.map((tag) => (
             <span
-              key={tag}
+              key={tag.id}               
               className="rounded-full bg-amber-400 px-3 py-1 text-[10px] font-semibold tracking-wide text-black"
             >
-              {tag}
+              {tag.name}                 
             </span>
           ))}
         </div>
@@ -31,6 +40,8 @@ function ProductCard({ product }) {
 
         {/* CTA ON HOVER */}
         <button
+          type="button"
+
           className="
             absolute bottom-6 left-1/2 -translate-x-1/2 translate-y-6
             rounded-full border border-orange-400
@@ -41,8 +52,10 @@ function ProductCard({ product }) {
             hover:shadow-[0_0_25px_rgba(255,160,0,0.8)]
             group-hover:translate-y-0 group-hover:opacity-100
           "
+          onClick={handleViewDetail}
         >
-          XEM CHI TIẾT
+          {/* NOTE: Điều hướng sang trang chi tiết theo productId */}
+          <span className="pointer-events-none">XEM CHI TIẾT</span>
         </button>
       </div>
 

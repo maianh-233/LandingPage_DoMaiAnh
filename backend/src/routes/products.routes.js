@@ -193,4 +193,115 @@ router.get("/products", async (req, res) => {
   }
 });
 
+// PRODUCT DETAIL: /products/:productId
+router.get("/products/:productId", async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+      include: {
+        category: true,
+        brand: true,
+        variants: {
+          orderBy: { price: "asc" },
+        },
+        specs: true,
+        ProductTag: {
+          select: { id: true, name: true },
+        },
+      },
+    });
+
+    if (!product) {
+      return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
+    }
+
+    const mapped = {
+      product: {
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        basePrice: Number(product.basePrice),
+        category: product.category ? { id: product.category.id, name: product.category.name } : null,
+        categoryName: product.category?.name || "",
+        brand: product.brand ? { id: product.brand.id, name: product.brand.name } : null,
+        brandName: product.brand?.name || "",
+        tags: (product.ProductTag || []).map((t) => ({ id: t.id, name: t.name })),
+        specs: (product.specs || []).map((s) => ({ id: s.id, key: s.key, value: s.value })),
+      },
+      variants: (product.variants || []).map((v) => ({
+        id: v.id,
+        productId: v.productId,
+        color: v.color,
+        storage: v.storage,
+        price: Number(v.price),
+        imageUrl: v.imageUrl,
+        description: v.description,
+      })),
+    };
+
+    return res.json(mapped);
+  } catch (error) {
+    console.error("Failed to load product detail", error);
+    return res.status(500).json({ message: "Không thể tải chi tiết sản phẩm" });
+  }
+});
+
+// SUGGESTIONS: /products/:productId/suggestions
+router.get("/products/:productId/suggestions", async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const limit = Number(req.query.limit) || 5;
+
+    const current = await prisma.product.findUnique({
+      where: { id: productId },
+      select: { categoryId: true },
+    });
+
+    if (!current) {
+      return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
+    }
+
+    const suggested = await prisma.product.findMany({
+      where: {
+        id: { not: productId },
+        categoryId: current.categoryId,
+      },
+      take: limit,
+      orderBy: { createdAt: "desc" },
+      include: {
+        variants: {
+          orderBy: { price: "asc" },
+          take: 1,
+        },
+        category: true,
+        ProductTag: {
+          take: 3,
+          select: { id: true, name: true },
+        },
+      },
+    });
+
+    const suggestions = suggested.map((p) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description,
+      categoryName: p.category?.name || "",
+      tags: (p.ProductTag || []).map((t) => ({ id: t.id, name: t.name })),
+      thumbnail:
+        p.variants?.[0]?.imageUrl ||
+        "https://i.pinimg.com/1200x/52/fb/3f/52fb3fb89711729f06e8bf7c5fc705b4.jpg",
+      min_price: Number(p.variants?.[0]?.price || p.basePrice),
+      basePrice: Number(p.basePrice),
+    }));
+
+    return res.json({ suggestions });
+  } catch (error) {
+    console.error("Failed to load product suggestions", error);
+    return res.status(500).json({ message: "Không thể tải sản phẩm gợi ý" });
+  }
+});
+
 module.exports = router;
+

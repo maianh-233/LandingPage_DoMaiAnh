@@ -1,4 +1,34 @@
-export default function Price() {
+function formatVnd(value) {
+  const n = Number(value);
+  if (Number.isNaN(n)) return "";
+  return n.toLocaleString("vi-VN");
+}
+
+export default function Price({ selectedVariant }) {
+  const price =
+    selectedVariant?.price ??
+    selectedVariant?.salePrice ??
+    selectedVariant?.unitPrice ??
+    selectedVariant?.minPrice ??
+    null;
+
+  const oldPrice =
+    selectedVariant?.oldPrice ??
+    selectedVariant?.compareAtPrice ??
+    selectedVariant?.listPrice ??
+    null;
+
+  const discountPercent = (() => {
+    if (!price || !oldPrice) return null;
+    const p = Number(price);
+    const o = Number(oldPrice);
+    if (!p || !o || o <= p) return null;
+    return Math.round(((o - p) / o) * 100);
+  })();
+
+  const priceText = price ? `${formatVnd(price)} ₫` : "";
+  const oldPriceText = oldPrice ? `${formatVnd(oldPrice)} ₫` : "";
+
   return (
     <div
       className="
@@ -10,7 +40,6 @@ export default function Price() {
         gap-y-2
       "
     >
-      {/* Giá hiện tại */}
       <span
         className="
           text-3xl
@@ -19,35 +48,38 @@ export default function Price() {
           sm:text-4xl
         "
       >
-        450,000 ₫
+        {priceText || "— ₫"}
       </span>
 
-      {/* Giá cũ */}
-      <span
-        className="
-          text-lg
-          text-gray-500
-          line-through
-          sm:text-2xl
-        "
-      >
-        650,000 ₫
-      </span>
+      {oldPriceText ? (
+        <span
+          className="
+            text-lg
+            text-gray-500
+            line-through
+            sm:text-2xl
+          "
+        >
+          {oldPriceText}
+        </span>
+      ) : null}
 
-      {/* Giảm giá */}
-      <span
-        className="
-          rounded-full
-          bg-[#FFCC00]/20
-          px-3 py-1
-          text-xs
-          font-medium
-          text-[#FFCC00]
-          sm:px-4 sm:py-1.5 sm:text-sm
-        "
-      >
-        -31%
-      </span>
+      {typeof discountPercent === "number" ? (
+        <span
+          className="
+            rounded-full
+            bg-[#FFCC00]/20
+            px-3 py-1
+            text-xs
+            font-medium
+            text-[#FFCC00]
+            sm:px-4 sm:py-1.5 sm:text-sm
+          "
+        >
+          -{discountPercent}%
+        </span>
+      ) : null}
     </div>
   );
 }
+
