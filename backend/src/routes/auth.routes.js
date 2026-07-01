@@ -1,11 +1,9 @@
 const express = require("express");
 const crypto = require("crypto");
+const { PrismaClient } = require("@prisma/client");
 
 const router = express.Router();
-
-// In-memory store for the demo auth flow. This keeps the feature functional even when no database is configured.
-const users = [];
-const sessions = new Map();
+const prisma = new PrismaClient();
 
 function hashPassword(password) {
   // Hash the password with a salt so we do not store plain text passwords.
@@ -13,14 +11,16 @@ function hashPassword(password) {
 }
 
 function createToken() {
-  // Create a lightweight random token for the current session.
+  // Random token for the current session.
   return crypto.randomBytes(24).toString("hex");
 }
 
 function sanitizeUser(user) {
+  // Prisma returns camelCase passwordHash
   const { passwordHash, ...safeUser } = user;
   return safeUser;
 }
+
 
 function normalizeGender(gender) {
   const normalized = String(gender || "").trim().toUpperCase();
@@ -84,49 +84,58 @@ function validateLoginPayload(payload) {
   return errors;
 }
 
-router.post("/register", (req, res) => {
-  // Create a new account after validating incoming data.
+router.post("/register", async (req, res) => {
   const errors = validateRegisterPayload(req.body || {});
   if (Object.keys(errors).length > 0) {
     return res.status(400).json({ message: "Dữ liệu không hợp lệ.", errors });
   }
 
-  const existingUser = users.find((user) => user.email === req.body.email || user.phone === req.body.phone);
-  if (existingUser) {
+  const email = req.body.email.trim().toLowerCase();
+  const phone = req.body.phone.trim();
+
+  const existingByEmail = await prisma.user.findUnique({ where: { email } }).catch(() => null);
+  const existingByPhone = await prisma.user.findUnique({ where: { phone } }).catch(() => null);
+
+  if (existingByEmail || existingByPhone) {
     return res.status(409).json({ message: "Email hoặc số điện thoại đã tồn tại." });
   }
 
-  const newUser = {
-    id: `user_${Date.now()}`,
-    fullName: req.body.fullName.trim(),
-    email: req.body.email.trim().toLowerCase(),
-    phone: req.body.phone.trim(),
-    gender: normalizeGender(req.body.gender),
-    dateOfBirth: req.body.dateOfBirth,
-    passwordHash: hashPassword(req.body.password),
-    createdAt: new Date().toISOString(),
-  };
-
-  users.push(newUser);
-
   const token = createToken();
-  sessions.set(token, newUser.id);
+
+  const user = await prisma.user.create({
+    data: {
+      fullName: req.body.fullName.trim(),
+      email,
+      phone,
+      gender: normalizeGender(req.body.gender),
+      dateOfBirth: new Date(req.body.dateOfBirth),
+      passwordHash: hashPassword(req.body.password),
+    },
+  });
+
+  await prisma.session.create({
+    data: {
+      userId: user.id,
+      token,
+    },
+  });
 
   return res.status(201).json({
     message: "Đăng ký thành công.",
-    user: sanitizeUser(newUser),
+    user: sanitizeUser(user),
     token,
   });
 });
 
-router.post("/login", (req, res) => {
-  // Authenticate a user and create a session token for subsequent requests.
+router.post("/login", async (req, res) => {
   const errors = validateLoginPayload(req.body || {});
   if (Object.keys(errors).length > 0) {
     return res.status(400).json({ message: "Dữ liệu không hợp lệ.", errors });
   }
 
-  const user = users.find((item) => item.email === req.body.email.trim().toLowerCase());
+  const email = req.body.email.trim().toLowerCase();
+  const user = await prisma.user.findUnique({ where: { email } }).catch(() => null);
+
   if (!user) {
     return res.status(401).json({ message: "Email hoặc mật khẩu không đúng." });
   }
@@ -137,7 +146,19 @@ router.post("/login", (req, res) => {
   }
 
   const token = createToken();
-  sessions.set(token, user.id);
+
+  await prisma.session.create({
+    data: {
+      userId: user.id,
+      token,
+    },
+  });
+
+  // update lastLogin (optional)
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { lastLogin: new Date() },
+  }).catch(() => null);
 
   return res.json({
     message: "Đăng nhập thành công.",
@@ -146,34 +167,37 @@ router.post("/login", (req, res) => {
   });
 });
 
-router.get("/me", (req, res) => {
-  // Return the currently authenticated user based on the bearer token.
+router.get("/me", async (req, res) => {
   const authHeader = req.headers.authorization || "";
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
 
-  if (!token || !sessions.has(token)) {
+  if (!token) {
     return res.status(401).json({ message: "Bạn chưa đăng nhập." });
   }
 
-  const userId = sessions.get(token);
-  const user = users.find((item) => item.id === userId);
-  if (!user) {
+  const session = await prisma.session.findUnique({
+    where: { token },
+    include: { user: true },
+  }).catch(() => null);
+
+  if (!session || !session.user) {
     return res.status(401).json({ message: "Phiên đăng nhập không hợp lệ." });
   }
 
-  return res.json({ user: sanitizeUser(user) });
+  return res.json({ user: sanitizeUser(session.user) });
 });
 
-router.post("/logout", (req, res) => {
-  // Remove the session token so the client can no longer access protected endpoints.
+router.post("/logout", async (req, res) => {
   const authHeader = req.headers.authorization || "";
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
 
-  if (token) {
-    sessions.delete(token);
+  if (!token) {
+    return res.json({ message: "Đăng xuất thành công." });
   }
 
+  await prisma.session.delete({ where: { token } }).catch(() => null);
   return res.json({ message: "Đăng xuất thành công." });
 });
+
 
 module.exports = router;

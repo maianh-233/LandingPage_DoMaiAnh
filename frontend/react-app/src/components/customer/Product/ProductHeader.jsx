@@ -1,12 +1,10 @@
 import SearchBar from "./SearchBar";
-import SearchTypeDropdown from "./SearchTypeDropdown";
 
 export default function ProductHeader({
   search,
   setSearch,
-  searchType,
-  setSearchType,
-  setOpenFilter, 
+  onSearchKeyDown,
+  setOpenFilter,
 }) {
   return (
     <header className="border-b border-zinc-800 bg-zinc-900">
@@ -19,17 +17,11 @@ export default function ProductHeader({
             <SearchBar
               value={search}
               onChange={setSearch}
+              onKeyDown={onSearchKeyDown} // ✅ truyền xuống
               placeholder="Tìm kiếm sản phẩm..."
             />
           </div>
 
-          {/* Dropdown */}
-          <div className="w-full lg:w-auto">
-            <SearchTypeDropdown
-              value={searchType}
-              onChange={setSearchType}
-            />
-          </div>
 
           {/* BUTTON FILTER MOBILE */}
           <button

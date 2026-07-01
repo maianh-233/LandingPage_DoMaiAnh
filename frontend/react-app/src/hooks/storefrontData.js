@@ -102,7 +102,6 @@ export const bestSellerProducts = [
 export const navLinks = [
   { id: "trang-chu", label: "Trang Chủ", href: "/" },
   { id: "san-pham", label: "Sản Phẩm", href: "/products" },
-  { id: "brand", label: "Hãng", href: "/brand" },
   { id: "promotion", label: "Khuyến Mãi", href: "/promotions" },
 ];
 

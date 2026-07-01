@@ -1,4 +1,18 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_BASE_URL = (() => {
+  const envUrl = import.meta.env.VITE_API_URL?.trim();
+
+  if (envUrl) {
+    const normalizedUrl = envUrl.replace(/\/$/, "");
+    return normalizedUrl.endsWith("/api") ? normalizedUrl : `${normalizedUrl}/api`;
+  }
+
+  if (import.meta.env.PROD) {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    return `${origin}/api`;
+  }
+
+  return "http://localhost:5000/api";
+})();
 
 function buildHeaders(token) {
   const headers = {

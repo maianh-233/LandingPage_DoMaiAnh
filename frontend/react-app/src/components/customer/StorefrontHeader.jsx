@@ -1,5 +1,6 @@
 import {
     ChevronDown,
+    LogIn,
     LogOut,
     Menu,
     Package,
@@ -110,59 +111,71 @@ export default function StorefrontHeader({ navLinks = [], cartCount = 0 }) {
 
           {/* USER */}
           <div ref={userRef} className="relative">
-            {/* Trigger */}
-            <div
-              onClick={(e) => {
-                e.stopPropagation(); 
-                setOpenUser((prev) => !prev);
-              }}
-              className="flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1 transition hover:bg-zinc-800"
-            >
-              <div className="hidden text-right leading-tight sm:block">
-                <p className="text-sm font-medium">
-                  {loading ? "Đang tải..." : user?.fullName || "Khách"}
-                </p>
+            {loading ? (
+              <div className="flex items-center gap-2 rounded-xl px-2 py-1 text-sm text-zinc-300">
+                Đang tải...
               </div>
+            ) : user ? (
+              <>
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenUser((prev) => !prev);
+                  }}
+                  className="flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1 transition hover:bg-zinc-800"
+                >
+                  <div className="hidden text-right leading-tight sm:block">
+                    <p className="text-sm font-medium">{user.fullName || "Khách"}</p>
+                  </div>
 
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-700 text-xs font-bold">
-                {loading ? "..." : user?.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
-              </div>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-700 text-xs font-bold">
+                    {user.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
+                  </div>
 
-              <ChevronDown
-                size={14}
-                className={`transition ${openUser ? "rotate-180" : ""}`}
-              />
-            </div>
+                  <ChevronDown
+                    size={14}
+                    className={`transition ${openUser ? "rotate-180" : ""}`}
+                  />
+                </div>
 
-            {/* Dropdown */}
-            {openUser && (
-              <div
-                onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 mt-3 w-[90vw] sm:w-56 overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900 shadow-xl"
+                {openUser && (
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute right-0 mt-3 w-[90vw] sm:w-56 overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900 shadow-xl"
+                  >
+                    <DropdownItem
+                      icon={<User size={16} />}
+                      label="Thông tin cá nhân"
+                      to="/profile"
+                      onClick={() => setOpenUser(false)}
+                    />
+
+                    <DropdownItem
+                      icon={<Package size={16} />}
+                      label="Đơn hàng của tôi"
+                      to="/orders"
+                      onClick={() => setOpenUser(false)}
+                    />
+
+                    <div className="my-1 h-px bg-zinc-700" />
+
+                    <DropdownItem
+                      icon={<LogOut size={16} />}
+                      label="Đăng xuất"
+                      danger
+                      onClick={handleLogout}
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <Link
+                to="/customerlogin"
+                className="flex items-center gap-2 rounded-xl border border-amber-400/60 bg-amber-400/10 px-3 py-2 text-sm font-medium text-amber-300 transition hover:bg-amber-400/20"
               >
-                <DropdownItem
-                  icon={<User size={16} />}
-                  label="Thông tin cá nhân"
-                  to="/profile"
-                  onClick={() => setOpenUser(false)}
-                />
-
-                <DropdownItem
-                  icon={<Package size={16} />}
-                  label="Đơn hàng của tôi"
-                  to="/orders"
-                  onClick={() => setOpenUser(false)}
-                />
-
-                <div className="my-1 h-px bg-zinc-700" />
-
-                <DropdownItem
-                  icon={<LogOut size={16} />}
-                  label="Đăng xuất"
-                  danger
-                  onClick={handleLogout}
-                />
-              </div>
+                <LogIn size={16} />
+                <span>Đăng nhập</span>
+              </Link>
             )}
           </div>
         </div>

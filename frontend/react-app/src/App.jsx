@@ -2,8 +2,6 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import CustomerLayout from "./components/customer/CustomerLayout";
 import NotFound from "./pages/common/NotFound";
-import BrandPage from "./pages/customer/BrandPage";
-
 import CustomerHome from "./pages/customer/CustomerHome";
 import CustomerLogin from "./pages/customer/CustomerLogin";
 import CustomerRegister from "./pages/customer/CustomerRegister";
@@ -26,7 +24,6 @@ function App() {
           <Route index element={<CustomerHome />} />
           <Route path="products" element={<ProductPage />} />
           <Route path="promotions" element={<PromotionPage />} />
-          <Route path="brand" element={<BrandPage />} />
           <Route path="profile" element={<CustomerInfo />} />
           <Route path="carts" element={<CartPage/>} />
           <Route path="orders" element={<MyOrdersPage/>} />

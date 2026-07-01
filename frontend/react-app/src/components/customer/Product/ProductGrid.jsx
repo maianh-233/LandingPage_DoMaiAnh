@@ -1,18 +1,35 @@
-import ProductCard from "./ProductCard";
 import Pagination from "../../common/Pagination";
-export default function ProductGrid({ products, page, setPage }) {
+import ProductCard from "./ProductCard";
+
+export default function ProductGrid({ products, page, setPage, totalPages, loading, error }) {
+  if (loading) {
+    return <div className="text-zinc-300">Đang tải sản phẩm...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-400">{error}</div>;
+  }
+
+  if (!products || products.length === 0) {
+    return (
+      <div className="py-12 text-center text-zinc-300">
+        Không tìm thấy sản phẩm.
+      </div>
+    );
+  }
+
   return (
     <>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto scrollbar-hide max-h-[calc(100vh-200px)]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto scrollbar-hide max-h-[calc(100vh-200px)]">
         {products.map((p) => (
-            <ProductCard key={p.id} product={p} />
+          <ProductCard key={p.id} product={p} />
         ))}
-        </div>
+      </div>
 
       <div className="mt-6">
         <Pagination
           currentPage={page}
-          totalPages={5}
+          totalPages={totalPages}
           onPageChange={setPage}
         />
       </div>
