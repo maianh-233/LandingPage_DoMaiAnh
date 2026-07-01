@@ -1,0 +1,359 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =========================
+// ENUMS
+// =========================
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum AddressType {
+  HOME
+  WORK
+  OTHER
+}
+
+//
+// =========================
+// USER (AUTH CORE)
+// =========================
+model User {
+  id String @id @default(uuid())
+
+  /// login credentials
+  email        String? @unique
+  phone        String? @unique
+  passwordHash String? @map("password_hash")
+
+  /// profile (optional)
+  fullName    String?   @map("full_name")
+  dateOfBirth DateTime? @map("date_of_birth")
+  gender      Gender?
+  avatar      String?
+
+  lastLogin DateTime? @map("last_login")
+
+  // relations
+  addresses CustomerAddress[]
+  favorites FavoriteProduct[]
+  Order     Order[]
+}
+
+//
+// =========================
+// CUSTOMER ADDRESS
+// =========================
+model CustomerAddress {
+  id String @id @default(uuid())
+
+  userId String @map("user_id")
+
+  receiverName  String @map("receiver_name")
+  receiverPhone String @map("receiver_phone")
+
+  province String?
+  district String?
+  ward     String?
+
+  addressLine String  @map("address_line")
+  postalCode  String? @map("postal_code")
+
+  isDefault Boolean @default(false) @map("is_default")
+
+  addressType AddressType @default(HOME) @map("address_type")
+
+  user  User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Order Order[]
+
+  @@index([userId])
+  @@index([userId, isDefault])
+}
+
+//
+// =========================
+// CATEGORY (VD: Laptop, Phone,...)
+// =========================
+model Category {
+  id String @id @default(uuid())
+
+  name String
+
+  products Product[]
+}
+
+//
+// =========================
+// BRAND (Apple, Samsung,...)
+// =========================
+model Brand {
+  id String @id @default(uuid())
+
+  name String @unique
+
+  products Product[]
+}
+
+//
+// =========================
+// PRODUCT (MAIN)
+// =========================
+model Product {
+  id String @id @default(uuid())
+
+  name        String
+  description String?
+
+  basePrice Decimal @map("base_price")
+
+  categoryId String @map("category_id")
+  brandId    String @map("brand_id")
+
+  category Category @relation(fields: [categoryId], references: [id])
+  brand    Brand    @relation(fields: [brandId], references: [id])
+
+  variants  ProductVariant[]
+  specs     ProductSpec[]
+  favorites FavoriteProduct[]
+
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime?    @updatedAt
+  ProductTag ProductTag[]
+
+  @@index([categoryId])
+  @@index([brandId])
+}
+
+//
+// =========================
+// PRODUCT_TAGS
+// =========================
+model ProductTag {
+  id String @id @default(uuid())
+
+  productId String @map("product_id")
+  name      String
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+//
+// =========================
+// PRODUCT VARIANT
+// =========================
+model ProductVariant {
+  id String @id @default(uuid())
+
+  productId String @map("product_id")
+
+  /// màu sắc (Black, White, Blue,...)
+  color String
+
+  /// dung lượng / option (128GB, 256GB,...)
+  storage String?
+
+  /// giá riêng từng biến thể
+  price Decimal
+
+  /// ảnh đại diện biến thể
+  imageUrl String? @map("image_url")
+
+  /// mô tả riêng cho từng biến thể
+  description String?
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+}
+
+//
+// =========================
+// PRODUCT SPECS (KEY-VALUE)
+// =========================
+model ProductSpec {
+  id String @id @default(uuid())
+
+  productId String @map("product_id")
+
+  /// ví dụ: CPU, RAM, Screen, Battery
+  key String
+
+  /// ví dụ: i7, 16GB, 6.7 inch
+  value String
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+//
+// =========================
+// FAVORITE PRODUCTS
+// =========================
+model FavoriteProduct {
+  id String @id @default(uuid())
+
+  userId    String @map("user_id")
+  productId String @map("product_id")
+
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
+}
+
+// =========================
+// ENUMS
+// =========================
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPING
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+  FAILED
+}
+
+enum ShippingStatus {
+  PENDING
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  FAILED
+  RETURNED
+}
+
+//
+// =========================
+// ORDERS
+// =========================
+model Order {
+  id String @id @default(uuid())
+
+  orderCode String @unique @map("order_code")
+
+  status        OrderStatus   @default(PENDING)
+  paymentStatus PaymentStatus @default(UNPAID) @map("payment_status")
+
+  subtotal      Decimal @default(0)
+  discountTotal Decimal @default(0) @map("discount_total")
+  tax           Decimal @default(0)
+  shippingFee   Decimal @default(0) @map("shipping_fee")
+  totalAmount   Decimal @default(0) @map("total_amount")
+
+  note              String?
+  customerAddressId String?
+  customerAddress   CustomerAddress? @relation(fields: [customerAddressId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  // relations
+  items      OrderItem[]
+  promotions OrderPromotion[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+//
+// =========================
+// ORDER ITEMS
+// =========================
+model OrderItem {
+  id String @id @default(uuid())
+
+  orderId String @map("order_id")
+
+  productId        String  @map("product_id")
+  productVariantId String? @map("product_variant_id")
+
+  productName String  @map("product_name")
+  sku         String?
+
+  storage String?
+
+  imageUrl String? @map("image_url")
+
+  price    Decimal @default(0)
+  quantity Int     @default(0)
+  total    Decimal @default(0)
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([productVariantId])
+}
+
+//
+// =========================
+// ORDER PROMOTIONS
+// =========================
+model OrderPromotion {
+  id String @id @default(uuid())
+
+  orderId String @map("order_id")
+
+  promotionId   String  @map("promotion_id")
+  promotionCode String? @map("promotion_code")
+
+  discountAmount Decimal @map("discount_amount")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+enum PromotionDiscountType {
+  PERCENT
+  FIXED
+}
+
+model Promotion {
+  id   String @id @default(uuid())
+  code String @unique
+  name String
+
+  discountType  PromotionDiscountType @map("discount_type")
+  discountValue Decimal               @map("discount_value") @db.Decimal(10, 2)
+
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
+
+  minOrderValue Decimal  @default(0) @map("min_order_value") @db.Decimal(14, 2)
+  maxDiscount   Decimal? @map("max_discount") @db.Decimal(14, 2)
+  usageLimit    Int?     @map("usage_limit")
+
+  @@index([code])
+  @@index([startDate, endDate])
+}
