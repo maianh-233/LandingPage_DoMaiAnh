@@ -5,15 +5,7 @@ export default function Breadcrumb() {
   const [liked, setLiked] = useState(false);
 
   return (
-    <div className="mb-6 flex items-center justify-between gap-4">
-      
-      {/* Breadcrumb */}
-      <nav className="overflow-x-auto whitespace-nowrap text-sm text-gray-400">
-        Công nghệ / Âm thanh /{" "}
-        <span className="text-white">Tai nghe Wireless Pro</span>
-      </nav>
-
-      {/* Favorite button */}
+    <div className="mb-6 flex justify-end">
       <button
         onClick={() => setLiked(!liked)}
         className={`

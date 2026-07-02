@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import PromoInput from "./PromoInput";
 
 export default function OrderSummary({
@@ -7,6 +8,8 @@ export default function OrderSummary({
   onApplyPromo,
   onRemovePromo,
 }) {
+  const navigate = useNavigate();
+
   return (
     <div
       className="
@@ -49,10 +52,19 @@ export default function OrderSummary({
               px-3 py-2 text-sm
             "
           >
-            <span>{p.code}</span>
+            <span>
+              {p.code}
+              {p.name && p.name !== p.code ? (
+                <span className="text-zinc-400 ml-1">({p.name})</span>
+              ) : null}
+              <span className="text-emerald-400 ml-2">
+                -{p.amount.toLocaleString("vi-VN")} ₫
+              </span>
+            </span>
             <button
               onClick={() => onRemovePromo(p.code)}
-              className="text-red-400"
+              className="text-red-400 hover:text-red-300"
+              aria-label={`Xóa mã ${p.code}`}
             >
               ✕
             </button>
@@ -68,10 +80,7 @@ export default function OrderSummary({
         </div>
 
         {appliedPromos.map((p) => (
-          <div
-            key={p.code}
-            className="flex justify-between text-emerald-400"
-          >
+          <div key={p.code} className="flex justify-between text-emerald-400">
             <span>Giảm ({p.code})</span>
             <span>-{p.amount.toLocaleString("vi-VN")} ₫</span>
           </div>
@@ -88,6 +97,7 @@ export default function OrderSummary({
       </div>
 
       <button
+        onClick={() => navigate("/checkout")}
         className="
           mt-4
           w-full
@@ -103,3 +113,4 @@ export default function OrderSummary({
     </div>
   );
 }
+

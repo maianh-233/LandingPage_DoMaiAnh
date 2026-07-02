@@ -1,30 +1,60 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
-  orderData as mockOrderData,
-  savedAddresses,
-  store,
+    orderData as mockOrderData,
+    savedAddresses,
+    store,
 } from "../../hooks/mockCheckoutData";
 
+
+
+
 import OrderItems from "../../components/customer/Checkout/OrderItems";
+import PriceSummary from "../../components/customer/Checkout/PriceSummary";
+import Promotions from "../../components/customer/Checkout/Promotions";
 import SavedAddresses from "../../components/customer/Checkout/SavedAddresses";
 import ShippingForm from "../../components/customer/Checkout/ShippingForm";
-import Promotions from "../../components/customer/Checkout/Promotions";
-import PriceSummary from "../../components/customer/Checkout/PriceSummary";
-import MapSection from "../../components/customer/Checkout/MapSection";
 import StoreInfo from "../../components/customer/Checkout/StoreInfo";
 
-import OrderTypeSelector from "../../components/customer/Checkout/OrderTypeSelector";
-import PaymentMethodSelector from "../../components/customer/Checkout/PaymentMethodSelector";
 import OrderNote from "../../components/customer/Checkout/OrderNote";
+import PaymentMethodSelector from "../../components/customer/Checkout/PaymentMethodSelector";
 
 export default function CheckoutPage() {
   /* ========= ORDER ========= */
-  const [order, setOrder] = useState(mockOrderData);
+  const [order] = useState(() => {
+    try {
+      const raw = localStorage.getItem("appliedPromos");
+      if (!raw) return mockOrderData;
+      const parsed = JSON.parse(raw);
+      const appliedPromos = parsed?.appliedPromos || [];
+      const items = parsed?.items || mockOrderData.items;
+
+      const discount_total = appliedPromos.reduce(
+        (s, p) => s + Number(p.amount || 0),
+        0
+      );
+
+      return {
+        ...mockOrderData,
+        items,
+        promotions: appliedPromos.map((p) => ({
+          code: p.code,
+          name: p.code,
+          discount: Number(p.amount || 0),
+        })),
+        discount_total,
+        shipping_fee: 30000,
+      };
+    } catch {
+      return mockOrderData;
+    }
+  });
+
 
   /* ========= TYPE & PAYMENT ========= */
-  const [orderType, setOrderType] = useState("ONLINE"); // ONLINE | PICKUP
+  const [orderType] = useState("ONLINE"); // ONLINE | PICKUP
   const [paymentMethod, setPaymentMethod] = useState("COD"); // COD | VNPAY
-  const [pickupStore, setPickupStore] = useState(null);
+  const [pickupStore] = useState(null);
+
 
   /* ========= NOTE ========= */
   const [note, setNote] = useState("");
@@ -46,12 +76,8 @@ export default function CheckoutPage() {
 
   /* ========= SIDE EFFECT ========= */
 
-  // Khi chuyển sang PICKUP → reset địa chỉ
-  useEffect(() => {
-    if (orderType === "PICKUP") {
-      setShippingForm(defaultAddress);
-    }
-  }, [orderType]);
+
+
 
   /* ========= UI ========= */
   return (
@@ -66,13 +92,7 @@ export default function CheckoutPage() {
           {/* DANH SÁCH SẢN PHẨM */}
           <OrderItems items={order.items} />
 
-          {/* LOẠI ĐƠN */}
-          <OrderTypeSelector
-            value={orderType}
-            onChange={setOrderType}
-            stores={[store]}
-            onSelectStore={setPickupStore}
-          />
+
 
           {/* ========== ONLINE ========== */}
           {orderType === "ONLINE" && (
@@ -87,10 +107,6 @@ export default function CheckoutPage() {
                 setForm={setShippingForm}
               />
 
-              <MapSection
-                address={shippingForm}
-                store={store}
-              />
             </>
           )}
 
@@ -117,15 +133,8 @@ export default function CheckoutPage() {
           <div className="bg-zinc-900 rounded-2xl p-6 sticky top-6 space-y-6">
             <StoreInfo store={store} />
 
-            <Promotions
-              promotions={order.promotions}
-              onApply={(discount) =>
-                setOrder(prev => ({
-                  ...prev,
-                  discount_total: prev.discount_total + discount,
-                }))
-              }
-            />
+            <Promotions promotions={order.promotions} />
+
 
             <PriceSummary order={order} />
           </div>

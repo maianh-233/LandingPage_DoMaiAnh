@@ -38,7 +38,7 @@ export default function ProductInfo({ product, variants = [] }) {
         onSelectVariant={(variant) => setSelectedVariant(variant)}
       />
 
-      <ActionButtons />
+      <ActionButtons product={product} selectedVariant={selectedVariant || defaultVariant} />
       <Description product={product} selectedVariant={selectedVariant || defaultVariant} />
       <ExtraInfo product={product} selectedVariant={selectedVariant || defaultVariant} />
 

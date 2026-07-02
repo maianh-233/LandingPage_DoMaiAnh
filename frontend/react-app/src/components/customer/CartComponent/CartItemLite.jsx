@@ -1,63 +1,60 @@
-import {Trash} from 'lucide-react';
-export default function CartItem({
-  item,
-  onToggleCheck,
-  onChangeQty,
-  onRemove,
-}) {
+import { Trash } from 'lucide-react';
+export default function CartItemLite({ item, onChangeQty, onRemove, onToggleCheck }) {
+  const price = Number(item.price || 0);
+  const quantity = Number(item.quantity || 1);
+  const totalForLine = price * quantity;
+
   return (
     <div
       className="
         bg-zinc-900 border border-zinc-800
         rounded-2xl
         p-3 sm:p-4
-        flex gap-3 sm:gap-4
+        flex items-start gap-3 sm:gap-4
       "
     >
-      {/* CHECKBOX */}
       <input
         type="checkbox"
-        checked={item.checked}
-        onChange={onToggleCheck}
-        className="mt-1 w-4 h-4 sm:w-5 sm:h-5 accent-amber-400"
-      />
-
-      {/* IMAGE */}
-      <img
-        src={item.image}
+        checked={item.checked !== false}
+        onChange={() => onToggleCheck?.()}
         className="
-          w-20 h-20
-          sm:w-28 sm:h-28
-          rounded-xl
-          object-cover
-          shrink-0
+          w-4 h-4 sm:w-5 sm:h-5
+          accent-amber-400
+          mt-0.5
+          cursor-pointer
         "
       />
 
-      {/* CONTENT */}
+
+      <img
+        src={item.imageUrl || "https://picsum.photos/300/300?random=11"}
+        className="w-20 h-20 sm:w-28 sm:h-28 rounded-xl object-cover shrink-0"
+        alt={item.name || "Product"}
+      />
+
       <div className="flex-1 flex flex-col">
-        {/* TOP */}
         <div className="flex justify-between gap-2">
           <div>
             <h3 className="text-sm sm:text-lg font-medium leading-tight">
-              {item.name}
+              {item.name || ""}
             </h3>
             <p className="text-zinc-400 text-xs sm:text-sm">
-              {item.brand} • {item.color} • {item.size}
+              {item.brand ? `${item.brand} • ` : ""}
+              {item.color || ""}
+              {item.storage ? ` • ${item.storage}` : ""}
             </p>
           </div>
 
           <button
             onClick={onRemove}
             className="text-red-400 hover:text-red-500 text-sm"
+            aria-label="Xóa"
           >
             <Trash size={20}/>
           </button>
         </div>
 
-        {/* BOTTOM */}
         <div className="flex justify-between items-center mt-3 sm:mt-5">
-          {/* QTY */}
           <div className="flex border border-zinc-700 rounded-xl overflow-hidden">
             <button
               onClick={() => onChangeQty(-1)}
@@ -76,12 +73,18 @@ export default function CartItem({
             </button>
           </div>
 
-          {/* PRICE */}
-          <p className="text-amber-400 font-semibold text-sm sm:text-xl">
-            {(item.price * item.quantity).toLocaleString("vi-VN")} ₫
-          </p>
+          <div className="text-right">
+            <p className="text-zinc-400 text-xs sm:text-sm">
+              {price.toLocaleString("vi-VN")} ₫
+            </p>
+            <p className="text-amber-400 font-semibold text-sm sm:text-xl mt-0.5">
+              {totalForLine.toLocaleString("vi-VN")} ₫
+            </p>
+          </div>
+
         </div>
       </div>
     </div>
   );
 }
+
