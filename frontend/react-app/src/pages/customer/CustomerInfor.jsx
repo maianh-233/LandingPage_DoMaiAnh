@@ -6,68 +6,22 @@ import AddressList from "../../components/customer/Profile/AddressList";
 import EditProfileModal from "../../components/customer/Profile/EditProfileModal";
 import AddAddressModal from "../../components/customer/Profile/AddAddressModal";
 import { useAuth } from "../../context/AuthContext";
-
-const USER_INIT = {
-  name: "Nguyễn Văn A",
-  email: "nguyenvana@example.com",
-  phone: "0123 456 789",
-  birthDate: "1995-06-15",
-};
-
-const ADDRESS_INIT = [
- {
-    id: "addr-1",
-    user_id: "user-1",
-    receiver_name: "Nguyễn Văn A",
-    receiver_phone: "0123 456 789",
-    province: "TP. Hồ Chí Minh",
-    district: "Quận 1",
-    ward: "Phường Bến Nghé",
-    address_line: "123 Nguyễn Thị Minh Khai",
-    postal_code: "700000",
-    is_default: true,
-    address_type: "HOME",
-    created_at: "2024-05-01T08:30:00",
-    updated_at: "2024-05-01T08:30:00",
-  },
-  {
-    id: "addr-2",
-    user_id: "user-1",
-    receiver_name: "Nguyễn Văn A",
-    receiver_phone: "0987 654 321",
-    province: "TP. Hồ Chí Minh",
-    district: "Quận Bình Thạnh",
-    ward: "Phường 25",
-    address_line: "Landmark 81, Vinhomes Central Park",
-    postal_code: "700000",
-    is_default: false,
-    address_type: "WORK",
-    created_at: "2024-05-10T09:00:00",
-    updated_at: "2024-05-10T09:00:00",
-  },
-  {
-    id: "addr-3",
-    user_id: "user-1",
-    receiver_name: "Nguyễn Văn A",
-    receiver_phone: "0909 111 222",
-    province: "Đà Nẵng",
-    district: "Hải Châu",
-    ward: "Phường Thạch Thang",
-    address_line: "45 Trần Phú",
-    postal_code: "550000",
-    is_default: false,
-    address_type: "OTHER",
-    created_at: "2024-06-01T14:20:00",
-    updated_at: "2024-06-01T14:20:00",
-  },
-];
+import {
+  createAddress,
+  deleteAddress,
+  getAddresses,
+  mapUserToProfile,
+  setDefaultAddress,
+  updateProfile,
+} from "../../services/profileService";
 
 export default function CustomerInfoPage() {
   const navigate = useNavigate();
-  const { user: authUser, loading: authLoading } = useAuth();
-  const [user, setUser] = useState(USER_INIT);
-  const [addresses, setAddresses] = useState(ADDRESS_INIT);
+  const { user: authUser, token, loading: authLoading, updateUser } = useAuth();
+  const [user, setUser] = useState({ name: "", email: "", phone: "", birthDate: "" });
+  const [addresses, setAddresses] = useState([]);
   const [loadingProfile, setLoadingProfile] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   const [editOpen, setEditOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
@@ -78,31 +32,73 @@ export default function CustomerInfoPage() {
       return;
     }
 
-    if (!authUser) {
+    if (!authUser || !token) {
       navigate("/customerlogin");
       return;
     }
 
-    setUser({
-      name: authUser.fullName || "Người dùng",
-      email: authUser.email || "",
-      phone: authUser.phone || "",
-      birthDate: authUser.dateOfBirth
-        ? new Date(authUser.dateOfBirth).toISOString().split("T")[0]
-        : "",
-    });
-    setLoadingProfile(false);
-  }, [authLoading, authUser, navigate]);
+    const loadProfile = async () => {
+      setLoadingProfile(true);
+      setLoadError("");
 
-  const deleteAddress = useCallback(
-    (id) => setAddresses((prev) => prev.filter((a) => a.id !== id)),
-    []
+      try {
+        setUser(mapUserToProfile(authUser));
+        const data = await getAddresses(token);
+        setAddresses(data.addresses || []);
+      } catch (error) {
+        console.error(error);
+        setLoadError(error.message || "Không thể tải thông tin hồ sơ.");
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+
+    loadProfile();
+  }, [authLoading, authUser, token, navigate]);
+
+  const saveProfile = async (profile) => {
+    const data = await updateProfile(token, profile, profile.password || "");
+    updateUser(data.user);
+    setUser(mapUserToProfile(data.user));
+  };
+
+  const addAddress = async (payload) => {
+    const data = await createAddress(token, payload);
+    setAddresses((prev) => [...prev, data.address]);
+  };
+
+  const deleteAddressHandler = useCallback(
+    async (id) => {
+      await deleteAddress(token, id);
+      setAddresses((prev) => {
+        const removed = prev.find((a) => a.id === id);
+        const next = prev.filter((a) => a.id !== id);
+
+        if (removed?.is_default && next.length > 0) {
+          return next.map((a, index) => ({
+            ...a,
+            is_default: index === 0,
+          }));
+        }
+
+        return next;
+      });
+    },
+    [token]
   );
 
-  const addAddress = (addr) => {
-    setAddresses((prev) => [...prev, addr]);
-    setAddOpen(false);
-  };
+  const setDefaultAddressHandler = useCallback(
+    async (id) => {
+      await setDefaultAddress(token, id);
+      setAddresses((prev) =>
+        prev.map((a) => ({
+          ...a,
+          is_default: a.id === id,
+        }))
+      );
+    },
+    [token]
+  );
 
   if (loadingProfile) {
     return (
@@ -110,6 +106,22 @@ export default function CustomerInfoPage() {
         <div className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 px-6 py-4">
           <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
           <span>Đang tải thông tin người dùng...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-200 p-4">
+        <div className="rounded-2xl border border-red-800 bg-zinc-900 px-6 py-4 text-center max-w-md">
+          <p className="text-red-400">{loadError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 bg-amber-500 hover:bg-amber-600 text-black font-medium px-6 py-2 rounded-xl"
+          >
+            Thử lại
+          </button>
         </div>
       </div>
     );
@@ -126,7 +138,8 @@ export default function CustomerInfoPage() {
             <AddressList
               addresses={addresses}
               onAdd={() => setAddOpen(true)}
-              onDelete={deleteAddress}
+              onDelete={deleteAddressHandler}
+              onSetDefault={setDefaultAddressHandler}
             />
           </div>
         </div>
@@ -136,13 +149,13 @@ export default function CustomerInfoPage() {
         <EditProfileModal
           user={user}
           onClose={() => setEditOpen(false)}
-          onSave={setUser}
+          onSave={saveProfile}
         />
       )}
 
       {addOpen && (
         <AddAddressModal
-          phone={user.phone}
+          defaultPhone={user.phone}
           onClose={() => setAddOpen(false)}
           onAdd={addAddress}
         />

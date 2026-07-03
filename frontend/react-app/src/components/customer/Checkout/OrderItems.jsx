@@ -10,7 +10,7 @@ export default function OrderItems({ items }) {
       <div className="space-y-4">
         {items.map((item, i) => (
           <div key={i} className="flex gap-4 border-b border-zinc-700 pb-4">
-            <img src={item.image} className="w-20 h-20 rounded-xl" />
+            <img src={item.imageUrl} className="w-20 h-20 rounded-xl" />
             <div className="flex-1">
               <p className="font-medium">{item.name}</p>
               <p className="text-sm text-gray-400">

@@ -1,18 +1,88 @@
 import OrderItems from "../../components/customer/Checkout/OrderItems";
-import Promotions from "../../components/customer/Checkout/Promotions";
-import PriceSummary from "../../components/customer/Checkout/PriceSummary";
-import StoreInfo from "../../components/customer/Checkout/StoreInfo";
 import OrderNote from "../../components/customer/Checkout/OrderNote";
+import PriceSummary from "../../components/customer/Checkout/PriceSummary";
+import Promotions from "../../components/customer/Checkout/Promotions";
 import ShippingForm from "../../components/customer/Checkout/ShippingForm";
 
 import OrderStatusTimeline from "../../components/customer/OrderDetail/OrderStatusTimeline";
 import PaymentHistory from "../../components/customer/OrderDetail/PaymentHistory";
 
-import { orderDetailData } from "../../hooks/mockOrderDetailData";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 export default function OrderDetailPage() {
-  const order = orderDetailData;
-  const isOnline = order.order_type === "ONLINE";
+  const { token, loading: authLoading } = useAuth();
+  const { orderCode: orderCodeParam } = useParams();
+
+  const orderCode = orderCodeParam;
+
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const API_BASE_URL = (() => {
+    const envUrl = import.meta.env.VITE_API_URL?.trim();
+    if (envUrl) {
+      const normalizedUrl = envUrl.replace(/\/$/, "");
+      return normalizedUrl.endsWith("/api") ? normalizedUrl : `${normalizedUrl}/api`;
+    }
+    if (import.meta.env.PROD) {
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      return `${origin}/api`;
+    }
+    return "http://localhost:5000/api";
+  })();
+
+  useEffect(() => {
+    const load = async () => {
+      if (authLoading) return;
+      if (!orderCode) return;
+      if (!token) return;
+
+      setLoading(true);
+      setError("");
+      try {
+        const resp = await fetch(`${API_BASE_URL}/order/${orderCode}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data?.message || "Failed");
+        setOrder(data);
+      } catch (e) {
+        setError(e.message);
+        setOrder(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [API_BASE_URL, authLoading, orderCode, token]);
+
+  if (loading) {
+    return (
+      <div className="w-full xl:px-12 px-4 py-8 text-gray-200">
+        <h1 className="text-3xl font-bold mb-8">Đang tải...</h1>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full xl:px-12 px-4 py-8 text-gray-200">
+        <h1 className="text-3xl font-bold mb-8">Lỗi: {error}</h1>
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="w-full xl:px-12 px-4 py-8 text-gray-200">
+        <h1 className="text-3xl font-bold mb-8">Không tìm thấy đơn hàng</h1>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full xl:px-12 px-4 py-8 text-gray-200">
@@ -30,11 +100,9 @@ export default function OrderDetailPage() {
 
           <OrderItems items={order.items} />
 
-          {isOnline ? (
-            <ShippingForm form={order.shipping_address} readOnly />
-          ) : (
-            <StoreInfo store={order.store} />
-          )}
+          
+          <ShippingForm form={order.shipping_address} readOnly />
+          
 
           <OrderNote value={order.note} readOnly />
 
@@ -44,7 +112,6 @@ export default function OrderDetailPage() {
         {/* RIGHT */}
         <div className="lg:col-span-5">
           <div className="bg-zinc-900 rounded-2xl p-6 sticky top-6 space-y-6">
-            <StoreInfo store={order.store} />
             <Promotions promotions={order.promotions} readOnly />
             <PriceSummary order={order} />
           </div>

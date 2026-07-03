@@ -1,22 +1,30 @@
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+
+import Pagination from "../../components/common/Pagination";
 import ChatModal from "../../components/customer/Chat/ChatModal";
 import OrderFilter from "../../components/customer/Order/OrderFilter";
 import OrderList from "../../components/customer/Order/OrderList";
-import Pagination from "../../components/common/Pagination";
-import { orders as mockOrders } from "../../hooks/orders.mock";
 
 const PAGE_SIZE = 6;
 
 export default function MyOrdersPage() {
+  const navigate = useNavigate();
+  const { user, token, loading: authLoading } = useAuth();
+
   const [status, setStatus] = useState("");
+  const [orders, setOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [error, setError] = useState("");
   const [chatOrderId, setChatOrderId] = useState(null);
   const [page, setPage] = useState(1);
 
   const filteredOrders = useMemo(() => {
     return status
-      ? mockOrders.filter((o) => o.status === status)
-      : mockOrders;
-  }, [status]);
+      ? orders.filter((o) => o.status === status)
+      : orders;
+  }, [orders, status]);
 
   const totalPages = Math.ceil(filteredOrders.length / PAGE_SIZE);
 
@@ -26,6 +34,47 @@ export default function MyOrdersPage() {
       page * PAGE_SIZE
     );
   }, [filteredOrders, page]);
+
+  const API_BASE_URL = (() => {
+    const envUrl = import.meta.env.VITE_API_URL?.trim();
+    if (envUrl) {
+      const normalizedUrl = envUrl.replace(/\/$/, "");
+      return normalizedUrl.endsWith("/api") ? normalizedUrl : `${normalizedUrl}/api`;
+    }
+    if (import.meta.env.PROD) {
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      return `${origin}/api`;
+    }
+    return "http://localhost:5000/api";
+  })();
+
+  useEffect(() => {
+    const loadOrders = async () => {
+      if (authLoading) return;
+      if (!user?.id || !token) {
+        setOrders([]);
+        return;
+      }
+
+      setLoadingOrders(true);
+      setError("");
+      try {
+        const resp = await fetch(`${API_BASE_URL}/order/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data?.message || "Failed");
+        setOrders(data.orders || []);
+      } catch (e) {
+        setError(e.message);
+        setOrders([]);
+      } finally {
+        setLoadingOrders(false);
+      }
+    };
+
+    loadOrders();
+  }, [authLoading, user?.id, token]);
 
   return (
     <div className="min-h-screen w-full bg-zinc-950 text-zinc-200">
@@ -49,12 +98,21 @@ export default function MyOrdersPage() {
         </div>
 
         {/* LIST */}
-        <div className="h-[calc(100vh-230px)] overflow-y-auto">
-          <OrderList
-            orders={pagedOrders}
-            onChat={setChatOrderId}
-            onCancel={(id) => alert(`Hủy đơn ${id}`)}
-          />
+        <div className="h-[calc(100vh-230px)] overflow-y-auto overflow-hidden scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
+          {loadingOrders ? (
+            <div className="text-zinc-400 py-8">Đang tải đơn hàng...</div>
+          ) : error ? (
+            <div className="text-red-400 py-8">{error}</div>
+          ) : (
+            <OrderList
+              orders={pagedOrders}
+              onChat={setChatOrderId}
+              onCancel={(id) => alert(`Hủy đơn ${id}`)}
+              onOpen={(orderCode) =>
+                navigate(`/orderdetail/${orderCode}`, { replace: true })
+              }
+            />
+          )}
         </div>
 
         {/* PAGINATION (DESKTOP ONLY) */}

@@ -13,16 +13,19 @@ import { getStatusColor, getStatusText } from "../../../hooks/orderHelpers";
 const formatVND = (value) =>
   (Number(value ?? 0)).toLocaleString("vi-VN") + " ₫";
 
-export default function OrderCard({ order, onChat, onCancel }) {
+export default function OrderCard({ order, onChat, onCancel, onOpen }) {
   if (!order) return null;
 
   return (
-    <div className="
+    <div 
+    onClick={() => onOpen?.(order.order_code)}
+    className="
       bg-zinc-900 border border-zinc-800 rounded-2xl md:rounded-3xl
       p-4 md:p-6
       hover:border-amber-400 transition
       space-y-4
-    ">
+    "
+    >
 
       {/* ================= HEADER ================= */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3">

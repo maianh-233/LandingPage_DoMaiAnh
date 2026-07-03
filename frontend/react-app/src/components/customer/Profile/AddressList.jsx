@@ -10,6 +10,12 @@ import {
   Map
 } from "lucide-react";
 
+const ADDRESS_TYPE_LABELS = {
+  HOME: "Nhà riêng",
+  WORK: "Công ty",
+  OTHER: "Khác",
+};
+
 /* helper map icon theo loại địa chỉ */
 const AddressTypeIcon = ({ type }) => {
   switch (type) {
@@ -47,6 +53,18 @@ export default function AddressList({
       </div>
 
       {/* HORIZONTAL SCROLL – NO SCROLLBAR */}
+      {addresses.length === 0 ? (
+        <div className="rounded-3xl border border-dashed border-zinc-700 bg-zinc-800/50 p-10 text-center">
+          <MapPin className="mx-auto text-amber-400 mb-3" size={32} />
+          <p className="text-zinc-400">Bạn chưa có địa chỉ giao hàng nào.</p>
+          <button
+            onClick={onAdd}
+            className="mt-4 text-amber-400 hover:text-amber-300 font-medium"
+          >
+            Thêm địa chỉ đầu tiên
+          </button>
+        </div>
+      ) : (
       <div
         style={{
           overflowX: "auto",
@@ -95,7 +113,7 @@ export default function AddressList({
                 <div className="mt-4">
                   <span className="inline-flex items-center gap-2 text-xs px-3 py-1 rounded-full bg-zinc-700 text-zinc-300">
                     <AddressTypeIcon type={addr.address_type} />
-                    {addr.address_type}
+                    {ADDRESS_TYPE_LABELS[addr.address_type] || addr.address_type}
                   </span>
                 </div>
 
@@ -134,6 +152,7 @@ export default function AddressList({
           })}
         </div>
       </div>
+      )}
     </div>
   );
 }

@@ -36,6 +36,7 @@ export default function ShippingForm({ form, setForm, readOnly = false }) {
           onChange={change}
           readOnly={readOnly}
           className={inputClass}
+          placeholder="Tên người nhận"
         />
 
         <input
@@ -44,6 +45,7 @@ export default function ShippingForm({ form, setForm, readOnly = false }) {
           readOnly={readOnly}
           onChange={change}
           className={inputClass}
+          placeholder="Số điện thoại"
         />
       </div>
 
@@ -55,6 +57,7 @@ export default function ShippingForm({ form, setForm, readOnly = false }) {
           readOnly={readOnly}
           onChange={change}
           className={inputClass}
+          placeholder="Tỉnh/Thành phố"
         />
         <input
           name="district"
@@ -62,6 +65,7 @@ export default function ShippingForm({ form, setForm, readOnly = false }) {
           readOnly={readOnly}
           onChange={change}
           className={inputClass}
+          placeholder="Quận/Huyện"
         />
         <input
           name="ward"
@@ -69,6 +73,7 @@ export default function ShippingForm({ form, setForm, readOnly = false }) {
           readOnly={readOnly}
           onChange={change}
           className={inputClass}
+          placeholder="Phường/Xã"
         />
       </div>
 
@@ -86,6 +91,7 @@ export default function ShippingForm({ form, setForm, readOnly = false }) {
           focus:ring-blue-500/60
           opacity-70
         "
+        placeholder="Địa chỉ chi tiết (số nhà, tên đường,...)"
       />
     </div>
   );

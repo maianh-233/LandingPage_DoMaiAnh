@@ -132,6 +132,7 @@ model FavoriteProduct {
 model Order {
   id                String           @id @default(uuid())
   orderCode         String           @unique @map("order_code")
+  createdAt         DateTime         @default(now()) @map("created_at")
   status            OrderStatus      @default(PENDING)
   paymentStatus     PaymentStatus    @default(UNPAID) @map("payment_status")
   subtotal          Decimal          @default(0)
@@ -149,7 +150,9 @@ model Order {
 
   @@index([userId])
   @@index([status])
+  @@index([createdAt])
 }
+
 
 model OrderItem {
   id               String  @id @default(uuid())

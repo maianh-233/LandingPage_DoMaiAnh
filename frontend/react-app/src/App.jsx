@@ -30,7 +30,7 @@ function App() {
           <Route path="checkout" element={<CheckoutPage />} />
           {/* NOTE: productdetail cần có productId theo route động */}
           <Route path="productdetail/:productId" element={<ProductDetail />} />
-          <Route path="orderdetail" element={<OrderDetailPage />} />
+          <Route path="orderdetail/:orderCode" element={<OrderDetailPage />} />
         </Route>
       
         

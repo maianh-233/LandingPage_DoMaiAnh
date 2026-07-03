@@ -1,29 +1,37 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+
 import {
     orderData as mockOrderData,
-    savedAddresses,
-    store,
 } from "../../hooks/mockCheckoutData";
 
-
-
-
 import OrderItems from "../../components/customer/Checkout/OrderItems";
+import OrderNote from "../../components/customer/Checkout/OrderNote";
+import PaymentMethodSelector from "../../components/customer/Checkout/PaymentMethodSelector";
 import PriceSummary from "../../components/customer/Checkout/PriceSummary";
 import Promotions from "../../components/customer/Checkout/Promotions";
 import SavedAddresses from "../../components/customer/Checkout/SavedAddresses";
 import ShippingForm from "../../components/customer/Checkout/ShippingForm";
-import StoreInfo from "../../components/customer/Checkout/StoreInfo";
 
-import OrderNote from "../../components/customer/Checkout/OrderNote";
-import PaymentMethodSelector from "../../components/customer/Checkout/PaymentMethodSelector";
+import { getAddresses } from "../../services/profileService";
 
 export default function CheckoutPage() {
+  const navigate = useNavigate();
+  const { user: authUser, token, loading: authLoading } = useAuth();
+
+  const [addresses, setAddresses] = useState([]);
+  const [note, setNote] = useState("");
+
+  const SHIPPING_FEE = 30000;
+  const TAX_RATE = 0;
+
   /* ========= ORDER ========= */
   const [order] = useState(() => {
     try {
       const raw = localStorage.getItem("appliedPromos");
       if (!raw) return mockOrderData;
+
       const parsed = JSON.parse(raw);
       const appliedPromos = parsed?.appliedPromos || [];
       const items = parsed?.items || mockOrderData.items;
@@ -36,48 +44,181 @@ export default function CheckoutPage() {
       return {
         ...mockOrderData,
         items,
-        promotions: appliedPromos.map((p) => ({
+        promotions: appliedPromos.map(p => ({
           code: p.code,
           name: p.code,
           discount: Number(p.amount || 0),
         })),
         discount_total,
-        shipping_fee: 30000,
+        shipping_fee: SHIPPING_FEE,
       };
     } catch {
       return mockOrderData;
     }
   });
 
+  /* ========= LOAD ADDRESS ========= */
+  useEffect(() => {
+    if (authLoading) return;
 
-  /* ========= TYPE & PAYMENT ========= */
-  const [orderType] = useState("ONLINE"); // ONLINE | PICKUP
-  const [paymentMethod, setPaymentMethod] = useState("COD"); // COD | VNPAY
-  const [pickupStore] = useState(null);
+    if (!authUser || !token) {
+      navigate("/customerlogin");
+      return;
+    }
 
-
-  /* ========= NOTE ========= */
-  const [note, setNote] = useState("");
-
-  /* ========= SHIPPING FORM ========= */
-  const defaultAddress =
-    savedAddresses.find(a => a.is_default) || {
-      receiver_name: "",
-      receiver_phone: "",
-      province: "",
-      district: "",
-      ward: "",
-      address_line: "",
-      latitude: null,
-      longitude: null,
+    const loadProfile = async () => {
+      try {
+        const data = await getAddresses(token);
+        setAddresses(data.addresses || []);
+      } catch (err) {
+        console.error(err);
+      }
     };
 
-  const [shippingForm, setShippingForm] = useState(defaultAddress);
+    loadProfile();
+  }, [authLoading, authUser, token, navigate]);
 
-  /* ========= SIDE EFFECT ========= */
+  /* ========= CALCULATE ========= */
+  const subtotal = useMemo(() => (
+    order.items.reduce(
+      (sum, item) =>
+        sum + Number(item.price || 0) * Number(item.quantity || 1),
+      0
+    )
+  ), [order.items]);
+
+  const discountTotal = useMemo(() => (
+    order.promotions.reduce(
+      (sum, p) => sum + Number(p.discount || 0),
+      0
+    )
+  ), [order.promotions]);
+
+  const tax = useMemo(
+    () => Math.round(subtotal * TAX_RATE),
+    [subtotal]
+  );
+
+  const total = useMemo(() => (
+    Math.max(0, subtotal - discountTotal) + tax + SHIPPING_FEE
+  ), [subtotal, discountTotal, tax]);
+
+  const orderSummary = {
+    subtotal,
+    tax,
+    items: order.items,
+    promotions: order.promotions,
+    discount_total: discountTotal,
+    shipping_fee: SHIPPING_FEE,
+    total,
+  };
+
+  /* ========= TYPE & PAYMENT ========= */
+  const [orderType] = useState("ONLINE");
+  const [paymentMethod, setPaymentMethod] = useState("COD");
+
+  /* ========= SHIPPING ========= */
+  const [shippingForm, setShippingForm] = useState({
+    receiver_name: "",
+    receiver_phone: "",
+    province: "",
+    district: "",
+    ward: "",
+    address_line: "",
+  });
+
+  useEffect(() => {
+    // Set default address only when needed
+    const addr = addresses.find(a => a.is_default);
+    if (!addr) return;
+
+    setShippingForm((prev) => {
+      if (prev?.id === addr.id) return prev;
+      return addr;
+    });
+  }, [addresses]);
 
 
 
+
+  const [isConfirming, setIsConfirming] = useState(false);
+
+  const handleConfirmPayment = async () => {
+    if (isConfirming) return;
+
+    if (!authUser?.id || !token) {
+      navigate("/customerlogin");
+      return;
+    }
+
+    setIsConfirming(true);
+
+
+    // items cart đã chọn được lưu trong localStorage dưới key "appliedPromos" (được set từ CartPage)
+    const raw = localStorage.getItem("appliedPromos");
+    if (!raw) return;
+
+    const parsed = JSON.parse(raw);
+    const selectedItems = parsed?.items || [];
+    const appliedPromos = parsed?.appliedPromos || [];
+
+    // Map cart item -> format backend đang nhận: productVariantId, quantity, ...
+    // cart item dùng field variantId
+    const itemsPayload = selectedItems.map(it => ({
+      productVariantId: it.variantId,
+      quantity: Number(it.quantity || 1),
+    }));
+
+    const promotionsPayload = appliedPromos
+      .map(p => ({
+        // backend order.routes.js đang lấy promotionId từ promotions[].promotionId
+        // trong CartPage chúng ta chỉ lưu code + amount, nên gửi promotionId bằng null sẽ fail.
+        // vì yêu cầu của bạn: không kiểm tra tồn kho, nhưng vẫn cần promotionId hợp lệ.
+        // nếu bạn muốn tạm thời bỏ promotions khi tạo order, backend sẽ không tính giảm giá.
+        promotionId: null,
+        code: p.code,
+        discountAmount: Number(p.amount || 0),
+      }))
+      .filter(p => p.promotionId);
+
+    // shippingForm chứa object address đã chọn từ SavedAddresses
+    const customerAddressId = shippingForm?.id || null;
+
+    const body = {
+      userId: authUser.id,
+      customerAddressId,
+      note,
+      items: itemsPayload,
+      promotions: promotionsPayload,
+    };
+
+    const API_BASE_URL = (() => {
+      const envUrl = import.meta.env.VITE_API_URL?.trim();
+      if (envUrl) {
+        const normalizedUrl = envUrl.replace(/\/$/, "");
+        return normalizedUrl.endsWith("/api") ? normalizedUrl : `${normalizedUrl}/api`;
+      }
+      if (import.meta.env.PROD) {
+        const origin = typeof window !== "undefined" ? window.location.origin : "";
+        return `${origin}/api`;
+      }
+      return "http://localhost:5000/api";
+    })();
+
+    await fetch(`${API_BASE_URL}/order/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body),
+    }).then(async (resp) => {
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        throw new Error(data?.message || "Tạo đơn thất bại");
+      }
+    });
+
+    // quay về orders
+    navigate("/orders");
+  };
 
   /* ========= UI ========= */
   return (
@@ -87,56 +228,52 @@ export default function CheckoutPage() {
       </h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* ================= LEFT ================= */}
+        {/* LEFT */}
         <div className="lg:col-span-7 space-y-8">
-          {/* DANH SÁCH SẢN PHẨM */}
           <OrderItems items={order.items} />
 
-
-
-          {/* ========== ONLINE ========== */}
           {orderType === "ONLINE" && (
             <>
               <SavedAddresses
-                addresses={savedAddresses}
-                onSelect={addr => setShippingForm(addr)}
+                addresses={addresses}
+                onSelect={setShippingForm}
               />
 
               <ShippingForm
                 form={shippingForm}
                 setForm={setShippingForm}
               />
-
             </>
           )}
 
-          {/* ========== PICKUP ========== */}
-          {orderType === "PICKUP" && pickupStore && (
-            <StoreInfo store={pickupStore} />
-          )}
+          <OrderNote value={note} onChange={setNote} />
 
-          {/* NOTE */}
-          <OrderNote
-            value={note}
-            onChange={setNote}
-          />
-
-          {/* THANH TOÁN */}
           <PaymentMethodSelector
             value={paymentMethod}
             onChange={setPaymentMethod}
           />
         </div>
 
-        {/* ================= RIGHT ================= */}
+        {/* RIGHT */}
         <div className="lg:col-span-5">
           <div className="bg-zinc-900 rounded-2xl p-6 sticky top-6 space-y-6">
-            <StoreInfo store={store} />
-
             <Promotions promotions={order.promotions} />
+            <PriceSummary order={orderSummary} />
 
-
-            <PriceSummary order={order} />
+            <button
+              onClick={handleConfirmPayment}
+              disabled={isConfirming}
+              className={`
+                w-full mt-4 py-4 rounded-xl
+                text-black font-bold text-lg
+                transition-all
+                ${isConfirming
+                  ? "bg-amber-600/60 cursor-not-allowed"
+                  : "bg-amber-500 hover:bg-amber-400"}
+              `}
+            >
+              {isConfirming ? "Đang xử lý..." : "Xác nhận thanh toán"}
+            </button>
           </div>
         </div>
       </div>
