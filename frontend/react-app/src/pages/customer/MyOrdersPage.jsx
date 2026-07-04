@@ -77,6 +77,23 @@ export default function MyOrdersPage() {
   }, [authLoading, user?.id, token]);
 
   return (
+  <>
+    {loadingOrders &&  (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            {/* Spinner */}
+            <div className="relative w-12 h-12 animate-spin">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white via-white/40 to-transparent" />
+              <div className="absolute inset-[3px] rounded-full bg-black" />
+            </div>
+
+            {/* Text */}
+            <span className="text-white/80 text-sm tracking-wide">
+              Đang tải dữ liệu...
+            </span>
+          </div>
+        </div>
+    ) }
     <div className="min-h-screen w-full bg-zinc-950 text-zinc-200">
       <div className="w-full px-3 sm:px-6 lg:px-10 py-4 sm:py-6">
 
@@ -99,9 +116,7 @@ export default function MyOrdersPage() {
 
         {/* LIST */}
         <div className="h-[calc(100vh-230px)] overflow-y-auto overflow-hidden scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
-          {loadingOrders ? (
-            <div className="text-zinc-400 py-8">Đang tải đơn hàng...</div>
-          ) : error ? (
+          { error ? (
             <div className="text-red-400 py-8">{error}</div>
           ) : (
             <OrderList
@@ -131,5 +146,7 @@ export default function MyOrdersPage() {
         )}
       </div>
     </div>
+  </>
+
   );
 }

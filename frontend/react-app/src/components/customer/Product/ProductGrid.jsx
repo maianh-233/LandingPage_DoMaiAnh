@@ -1,11 +1,7 @@
 import Pagination from "../../common/Pagination";
 import ProductCard from "./ProductCard";
 
-export default function ProductGrid({ products, page, setPage, totalPages, loading, error }) {
-  if (loading) {
-    return <div className="text-zinc-300">Đang tải sản phẩm...</div>;
-  }
-
+export default function ProductGrid({ products, page, setPage, totalPages, error }) {
   if (error) {
     return <div className="text-red-400">{error}</div>;
   }
@@ -20,7 +16,7 @@ export default function ProductGrid({ products, page, setPage, totalPages, loadi
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto scrollbar-hide max-h-[calc(100vh-200px)]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 ">
         {products.map((p) => (
           <ProductCard key={p.id} product={p} />
         ))}

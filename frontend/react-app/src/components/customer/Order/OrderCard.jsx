@@ -1,11 +1,11 @@
 import {
-  Package,
-  Calendar,
-  CreditCard,
-  Truck,
-  MessageCircle,
-  XCircle,
-  Receipt,
+    Calendar,
+    CreditCard,
+    MessageCircle,
+    Package,
+    Receipt,
+    Truck,
+    XCircle,
 } from "lucide-react";
 
 import { getStatusColor, getStatusText } from "../../../hooks/orderHelpers";
@@ -147,7 +147,11 @@ export default function OrderCard({ order, onChat, onCancel, onOpen }) {
         <div className="flex gap-3 w-full md:w-auto">
 
           <button
-            onClick={() => onChat?.(order.id)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onChat?.(order.id);
+            }}
             className="
               flex-1 md:flex-none
               flex items-center justify-center gap-2
@@ -164,7 +168,12 @@ export default function OrderCard({ order, onChat, onCancel, onOpen }) {
 
           {order.status === "PENDING" && (
             <button
-              onClick={() => onCancel?.(order.id)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onCancel?.(order.id);
+            }}
+
               className="
                 flex-1 md:flex-none
                 flex items-center justify-center gap-2

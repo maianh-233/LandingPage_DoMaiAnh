@@ -16,6 +16,7 @@ router.post("/", async (req, res) => {
       note,
       items,
       promotions = [],
+      shippingFee,
     } = req.body;
 
     if (!userId || !items || items.length === 0) {
@@ -93,8 +94,8 @@ router.post("/", async (req, res) => {
         subtotal,
         discountTotal,
         tax: 0,
-        shippingFee: 0,
-        totalAmount: subtotal - discountTotal,
+        shippingFee: shippingFee != null ? Number(shippingFee) : 30000,
+        totalAmount: subtotal - discountTotal + (shippingFee != null ? Number(shippingFee) : 30000),
         status: "CONFIRMED",
         paymentStatus: "PAID",
         items: { create: orderItemsData },

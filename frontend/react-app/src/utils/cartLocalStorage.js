@@ -92,3 +92,13 @@ export function incrementAddCount(userId, delta = 1) {
   return nextCart;
 }
 
+export function clearUserCart(userId) {
+  if (!userId) return;
+  const state = getCartState();
+  if (state && typeof state === "object") {
+    delete state[String(userId)];
+  }
+  localStorage.setItem(CART_KEY, JSON.stringify(state));
+}
+
+

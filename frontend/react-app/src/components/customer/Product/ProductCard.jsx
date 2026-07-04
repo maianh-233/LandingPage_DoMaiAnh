@@ -11,7 +11,9 @@ function ProductCard({ product }) {
   };
 
   return (
-    <article className="group relative overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900 transition duration-500 hover:-translate-y-2 hover:border-amber-400">
+    <article 
+    onClick={handleViewDetail}
+    className="group relative overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900 transition duration-500 hover:-translate-y-2 hover:border-amber-400">
       
       {/* TAG */}
       {tags?.length > 0 && (
@@ -41,20 +43,23 @@ function ProductCard({ product }) {
         {/* CTA ON HOVER */}
         <button
           type="button"
-
+          onClick={(e) => {
+            e.stopPropagation();
+            handleViewDetail();
+          }}
           className="
+            hidden md:block
             absolute bottom-6 left-1/2 -translate-x-1/2 translate-y-6
             rounded-full border border-orange-400
             bg-orange-400
             px-6 py-2 text-xs font-semibold tracking-widest text-white
-            opacity-0 shadow-lg transition-all duration-300
+            shadow-lg transition-all duration-300
             hover:bg-orange-500
             hover:shadow-[0_0_25px_rgba(255,160,0,0.8)]
-            group-hover:translate-y-0 group-hover:opacity-100
+            md:opacity-0 md:group-hover:opacity-100
+            md:translate-y-6 md:group-hover:translate-y-0
           "
-          onClick={handleViewDetail}
         >
-          {/* NOTE: Điều hướng sang trang chi tiết theo productId */}
           <span className="pointer-events-none">XEM CHI TIẾT</span>
         </button>
       </div>

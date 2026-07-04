@@ -4,8 +4,7 @@ import PriceSummary from "../../components/customer/Checkout/PriceSummary";
 import Promotions from "../../components/customer/Checkout/Promotions";
 import ShippingForm from "../../components/customer/Checkout/ShippingForm";
 
-import OrderStatusTimeline from "../../components/customer/OrderDetail/OrderStatusTimeline";
-import PaymentHistory from "../../components/customer/OrderDetail/PaymentHistory";
+
 
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -62,9 +61,20 @@ export default function OrderDetailPage() {
 
   if (loading) {
     return (
-      <div className="w-full xl:px-12 px-4 py-8 text-gray-200">
-        <h1 className="text-3xl font-bold mb-8">Đang tải...</h1>
-      </div>
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            {/* Spinner */}
+            <div className="relative w-12 h-12 animate-spin">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white via-white/40 to-transparent" />
+              <div className="absolute inset-[3px] rounded-full bg-black" />
+            </div>
+
+            {/* Text */}
+            <span className="text-white/80 text-sm tracking-wide">
+              Đang tải dữ liệu...
+            </span>
+          </div>
+        </div>
     );
   }
 
@@ -79,7 +89,7 @@ export default function OrderDetailPage() {
   if (!order) {
     return (
       <div className="w-full xl:px-12 px-4 py-8 text-gray-200">
-        <h1 className="text-3xl font-bold mb-8">Không tìm thấy đơn hàng</h1>
+        
       </div>
     );
   }
@@ -93,10 +103,6 @@ export default function OrderDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* LEFT */}
         <div className="lg:col-span-7 space-y-8">
-          <OrderStatusTimeline
-            status={order.status}
-            history={order.status_history}
-          />
 
           <OrderItems items={order.items} />
 
@@ -105,8 +111,6 @@ export default function OrderDetailPage() {
           
 
           <OrderNote value={order.note} readOnly />
-
-          <PaymentHistory payments={order.payments} />
         </div>
 
         {/* RIGHT */}

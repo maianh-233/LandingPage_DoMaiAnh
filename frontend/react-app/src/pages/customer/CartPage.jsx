@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import CartItemLite from "../../components/customer/CartComponent/CartItemLite";
 import OrderSummary from "../../components/customer/CartComponent/OrderSummary";
-
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getUserCart, setUserCart } from "../../utils/cartLocalStorage";
+
 
 const API_BASE_URL = (() => {
   const envUrl = import.meta.env.VITE_API_URL?.trim();
@@ -22,6 +23,7 @@ const API_BASE_URL = (() => {
 export default function CartPage() {
   const { user } = useAuth();
   const userId = user?.id ?? user?.userId;
+  const navigate = useNavigate();
 
   const normalizeItems = useCallback(
     (items) =>
@@ -169,8 +171,31 @@ export default function CartPage() {
           "
         >
           {cartItems.length === 0 ? (
-            <div className="text-zinc-400 py-8 text-center">
-              Chưa có sản phẩm nào trong giỏ.
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-zinc-800/70 text-2xl">
+                🛒
+              </div>
+
+              <p className="text-base font-semibold text-zinc-200">
+                Chưa có sản phẩm nào trong giỏ
+              </p>
+
+              <p className="mt-2 text-sm text-zinc-500">
+                Thêm sản phẩm bạn thích để đặt hàng nhanh hơn
+              </p>
+
+              <button
+                onClick={() => navigate("/products")}
+                className="
+                  mt-5 rounded-full
+                  border border-amber-400
+                  px-6 py-2 text-xs font-semibold tracking-wide
+                  text-amber-400 transition
+                  hover:bg-amber-400 hover:text-black
+                "
+              >
+                Tiếp tục mua sắm
+              </button>
             </div>
           ) : (
             cartItems.map((item, idx) => {

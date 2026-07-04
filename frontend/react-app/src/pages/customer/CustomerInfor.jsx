@@ -102,10 +102,18 @@ export default function CustomerInfoPage() {
 
   if (loadingProfile) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-200">
-        <div className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 px-6 py-4">
-          <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
-          <span>Đang tải thông tin người dùng...</span>
+      <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          {/* Spinner */}
+          <div className="relative w-12 h-12 animate-spin">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white via-white/40 to-transparent" />
+            <div className="absolute inset-[3px] rounded-full bg-black" />
+          </div>
+
+          {/* Text */}
+          <span className="text-white/80 text-sm tracking-wide">
+            Đang tải dữ liệu...
+          </span>
         </div>
       </div>
     );

@@ -73,11 +73,24 @@ export default function ProductDetail() {
 
   return (
     <div className="w-full xl:px-12 px-4 py-8 text-gray-200">
-      <Breadcrumb />
+      
 
       {/* NOTE: loading/error cho trang chi tiết */}
       {loading && (
-        <div className="py-10 text-zinc-300">Đang tải chi tiết sản phẩm...</div>
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            {/* Spinner */}
+            <div className="relative w-12 h-12 animate-spin">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white via-white/40 to-transparent" />
+              <div className="absolute inset-[3px] rounded-full bg-black" />
+            </div>
+
+            {/* Text */}
+            <span className="text-white/80 text-sm tracking-wide">
+              Đang tải dữ liệu...
+            </span>
+          </div>
+        </div>
       )}
 
       {!loading && error && (
@@ -86,6 +99,7 @@ export default function ProductDetail() {
 
       {!loading && !error && (
         <>
+          <Breadcrumb />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
             {/* NOTE: đổ variants thật vào gallery */}
             <ProductGallery variants={variants} />

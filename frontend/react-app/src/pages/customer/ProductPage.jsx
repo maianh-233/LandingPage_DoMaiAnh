@@ -1,8 +1,11 @@
-import { useEffect, useState } from "react";
-import ProductGrid from "../../components/customer/Product/ProductGrid";
+import { useEffect, useMemo, useState } from "react";
 import ProductHeader from "../../components/customer/Product/ProductHeader";
 import ProductLayout from "../../components/customer/Product/ProductLayout";
 import ProductSidebar from "../../components/customer/Product/ProductSidebar";
+
+import ProductGrid from "../../components/customer/Product/ProductGrid";
+import useInfiniteScroll from "../../hooks/useInfiniteScroll";
+
 
 const DEFAULT_PRICE_RANGE = [100000, 2000000];
 const API_BASE_URL = (() => {
@@ -144,8 +147,95 @@ export default function ProductPage() {
     setDefaultPage(nextPage);
   };
 
+  // Infinite scroll on mobile only (sm and below)
+  const isMobile = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(max-width: 639px)").matches;
+  }, []);
+
+  const hasMore = useMemo(() => {
+    const totalPages = pagination?.totalPages || 1;
+    return currentPage < totalPages;
+  }, [pagination?.totalPages, currentPage]);
+
+
+  const handleLoadMore = async () => {
+    if (!hasMore) return;
+    const nextPage = currentPage + 1;
+
+    try {
+      const params = new URLSearchParams({
+        page: String(nextPage),
+        limit: "8",
+      });
+
+      if (activeMode === "search") {
+        params.set("search", search.trim());
+      } else if (activeMode === "filter") {
+        params.set("minPrice", String(appliedPriceRange[0]));
+        params.set("maxPrice", String(appliedPriceRange[1]));
+        if (selectedCategoryIds.length > 0) {
+          params.set("categoryIds", selectedCategoryIds.join(","));
+        }
+      }
+
+      const res = await fetch(`${API_BASE_URL}/products?${params.toString()}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || "Không thể tải sản phẩm");
+
+      setProducts((prev) => [...prev, ...(data.products || [])]);
+      setPagination(
+        data.pagination || {
+          page: nextPage,
+          totalPages: pagination.totalPages || 1,
+          totalItems: pagination.totalItems || 0,
+        }
+      );
+
+      // advance page state for subsequent fetches
+      if (activeMode === "search") setSearchPage(nextPage);
+      else if (activeMode === "filter") setFilterPage(nextPage);
+      else setDefaultPage(nextPage);
+    } catch (e) {
+      // ignore; keep current list
+      // eslint-disable-next-line no-console
+      console.error(e);
+    }
+  };
+
+  const { sentinelRef } = useInfiniteScroll({
+
+    hasMore: isMobile && hasMore,
+    loading: loading,
+    onLoadMore: handleLoadMore,
+    root: null,
+    rootMargin: "300px",
+    threshold: 0,
+  });
+
+  
   return (
-    <ProductLayout
+  <>
+    {loading && (
+      <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          {/* Spinner */}
+          <div className="relative w-12 h-12 animate-spin">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white via-white/40 to-transparent" />
+            <div className="absolute inset-[3px] rounded-full bg-black" />
+          </div>
+
+          {/* Text */}
+          <span className="text-white/80 text-sm tracking-wide">
+            Đang tải dữ liệu...
+          </span>
+        </div>
+      </div>
+    )}
+
+    <div className="contents">
+      <ProductLayout
+
       header={
         <ProductHeader
           search={searchInput}          
@@ -167,18 +257,24 @@ export default function ProductPage() {
           onClearFilters={handleClearFilters}
         />
       }
+  
       content={
         <ProductGrid
           products={products}
           page={activeMode === "search" ? searchPage : activeMode === "filter" ? filterPage : defaultPage}
           setPage={handlePageChange}
           totalPages={pagination.totalPages || 1}
-          loading={loading}
           error={error}
         />
       }
       openFilter={openFilter}
       setOpenFilter={setOpenFilter}
     />
-  );
+
+      {/* Sentinel for infinite scroll (mobile only) */}
+      <div ref={sentinelRef} className="h-1" />
+    </div>
+  </>
+);
+
 }

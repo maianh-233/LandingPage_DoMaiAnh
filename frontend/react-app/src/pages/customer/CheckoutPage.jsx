@@ -15,10 +15,13 @@ import SavedAddresses from "../../components/customer/Checkout/SavedAddresses";
 import ShippingForm from "../../components/customer/Checkout/ShippingForm";
 
 import { getAddresses } from "../../services/profileService";
+import { clearUserCart } from "../../utils/cartLocalStorage";
+
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { user: authUser, token, loading: authLoading } = useAuth();
+
 
   const [addresses, setAddresses] = useState([]);
   const [note, setNote] = useState("");
@@ -190,6 +193,8 @@ export default function CheckoutPage() {
       note,
       items: itemsPayload,
       promotions: promotionsPayload,
+      // luôn cố định phí ship 30.000đ cho tới khi tính theo khoảng cách/địa chỉ
+      shippingFee: SHIPPING_FEE,
     };
 
     const API_BASE_URL = (() => {
@@ -205,16 +210,26 @@ export default function CheckoutPage() {
       return "http://localhost:5000/api";
     })();
 
-    await fetch(`${API_BASE_URL}/order/`, {
+    const resp = await fetch(`${API_BASE_URL}/order/`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify(body),
-    }).then(async (resp) => {
-      if (!resp.ok) {
-        const data = await resp.json().catch(() => ({}));
-        throw new Error(data?.message || "Tạo đơn thất bại");
-      }
     });
+
+    if (!resp.ok) {
+      const data = await resp.json().catch(() => ({}));
+      throw new Error(data?.message || "Tạo đơn thất bại");
+    }
+
+    // ✅ Checkout thành công: xoá các sản phẩm đã mua khỏi localStorage
+    try {
+      // cart items dùng key theo user
+      clearUserCart(authUser.id);
+      // dữ liệu checkout đang dùng để dựng order
+      localStorage.removeItem("appliedPromos");
+    } catch (e) {
+      console.warn("Failed to clear localStorage after checkout", e);
+    }
 
     // quay về orders
     navigate("/orders");
