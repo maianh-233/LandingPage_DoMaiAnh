@@ -12,7 +12,16 @@ const ordersRoutes = require("./routes/order.routes");
 
 const app = express();
 
-app.use(cors());
+// 1. Tối ưu cấu hình CORS để nhận request ổn định từ Vercel
+app.use(cors({
+  origin: [
+    "https://landingpagedomaianh.vercel.app", // Tên miền frontend của bạn
+    "http://localhost:3000" // Để bạn vẫn test được dưới local
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true
+}));
+
 app.use(express.json());
 
 app.get("/", (_req, res) => {
@@ -25,9 +34,10 @@ app.use("/api", productRoutes);
 app.use("/api", promotionsRoutes);
 app.use("/api/order", ordersRoutes);
 
+// 2. Railway sẽ tự nạp cổng qua process.env.PORT
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
+// 3. THAY ĐỔI QUAN TRỌNG: Thêm "0.0.0.0" vào app.listen
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Backend Railway listening on port ${PORT}`);
 });
-
